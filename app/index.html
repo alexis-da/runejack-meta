@@ -1,0 +1,343 @@
+<title>Runejack Méta</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Jersey+10&family=IBM+Plex+Sans+Condensed:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: casino-felt dark app — sticky tab bar, then one view per tab (tier list rows, sortable tables, cards). */
+:root {
+  color-scheme: dark;
+  --bg: #0d1513; --felt: #13241e; --felt-2: #183028; --line: #2a4238;
+  --text: #ece6d6; --muted: #95a69d; --gold: #e8b84f; --gold-dim: #8a6d2f;
+  --tier-s: #ff7a59; --tier-a: #f2b84b; --tier-b: #6cc287; --tier-c: #5aa9e6; --tier-d: #8b919a;
+  --f-noblesse: #e3c15a; --f-ombre: #9b7be0; --f-sang: #e0524f; --f-mort: #a9c2b6; --f-arcane: #4fb0e8; --f-or: #f08a3c;
+  --good: #6cc287; --bad: #e0524f; --warn: #f2b84b; --contra: #c58cf0;
+  --display: "Jersey 10", "Courier New", monospace;
+  --body: "IBM Plex Sans Condensed", "Arial Narrow", system-ui, sans-serif;
+  --mono: "IBM Plex Mono", ui-monospace, monospace;
+}
+* { box-sizing: border-box; }
+body { background: var(--bg); color: var(--text); font-family: var(--body); font-size: 15px; line-height: 1.45; margin: 0; }
+.wrap { max-width: 1180px; margin: 0 auto; padding-block: 20px 64px; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+h1, h2, h3 { font-family: var(--display); font-weight: 400; letter-spacing: .02em; text-wrap: balance; margin: 0; }
+h1 { font-size: clamp(40px, 7vw, 64px); line-height: .9; color: var(--gold); }
+h2 { font-size: 32px; line-height: 1; }
+h3 { font-size: 25px; line-height: 1; }
+p { margin: 0; max-width: 72ch; }
+.muted { color: var(--muted); }
+header.top { display: grid; gap: 12px; padding-bottom: 16px; border-bottom: 1px solid var(--line); }
+.chips { display: flex; flex-wrap: wrap; gap: 8px; }
+.chip { font-family: var(--mono); font-size: 12px; border: 1px solid var(--line); border-radius: 999px; padding: 3px 10px; color: var(--muted); }
+.chip b { color: var(--text); font-weight: 500; }
+nav.tabs { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 5; background: var(--bg); display: flex; gap: 4px; overflow-x: auto; padding-block: 10px; border-bottom: 1px solid var(--line); }
+nav.tabs button { font-family: var(--display); font-size: 23px; line-height: 1; color: var(--muted); background: none; border: 1px solid transparent; border-radius: 6px; padding: 6px 12px; cursor: pointer; white-space: nowrap; }
+nav.tabs button[aria-selected="true"] { color: var(--bg); background: var(--gold); }
+button:focus-visible, input:focus-visible, select:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
+section.view { display: grid; gap: 20px; padding-top: 22px; }
+.bar { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.seg { display: inline-flex; border: 1px solid var(--line); border-radius: 8px; overflow: hidden; }
+.seg button { all: unset; cursor: pointer; padding: 6px 12px; font-size: 14px; color: var(--muted); border-right: 1px solid var(--line); }
+.seg button:last-child { border-right: 0; }
+.seg button[aria-pressed="true"] { background: var(--felt-2); color: var(--text); box-shadow: inset 0 -2px 0 var(--gold); }
+input[type="search"], select { background: var(--felt); color: var(--text); border: 1px solid var(--line); border-radius: 8px; padding: 6px 10px; font: inherit; font-size: 14px; }
+
+.comp { display: grid; grid-template-columns: 60px minmax(0, 1fr); background: var(--felt); border: 1px solid var(--line); border-radius: 12px; overflow: hidden; }
+.tier { display: grid; place-items: center; font-family: var(--display); font-size: 48px; color: var(--bg); }
+.tier.S { background: var(--tier-s); } .tier.A { background: var(--tier-a); } .tier.B { background: var(--tier-b); } .tier.C { background: var(--tier-c); } .tier.D { background: var(--tier-d); }
+.comp-body { padding: 14px 16px; display: grid; gap: 12px; min-width: 0; }
+.comp-head { display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px 12px; }
+.tag { font-family: var(--mono); font-size: 12px; border-radius: 4px; padding: 1px 6px; border: 1px solid var(--gold-dim); color: var(--gold); }
+.tag.grey { border-color: var(--line); color: var(--muted); }
+.fams { display: flex; flex-wrap: wrap; gap: 6px; }
+.fam { font-size: 12px; font-weight: 600; border-radius: 4px; padding: 2px 7px; color: var(--bg); }
+.fam.noblesse, .hex.noblesse { background: var(--f-noblesse); } .fam.ombre, .hex.ombre { background: var(--f-ombre); } .fam.sang, .hex.sang { background: var(--f-sang); }
+.fam.mort, .hex.mort { background: var(--f-mort); } .fam.arcane, .hex.arcane { background: var(--f-arcane); } .fam.or, .hex.or { background: var(--f-or); }
+.scroll { overflow-x: auto; }
+.board { display: grid; grid-template-columns: repeat(5, minmax(118px, 1fr)); gap: 10px; min-width: 610px; }
+.seat { display: grid; justify-items: center; align-content: start; gap: 5px; text-align: center; padding: 10px 6px; border-radius: 10px; background: color-mix(in srgb, var(--bg) 45%, transparent); }
+.sn { font-family: var(--mono); font-size: 11px; color: var(--muted); }
+.hex { width: 52px; height: 58px; clip-path: polygon(50% 0, 100% 25%, 100% 75%, 50% 100%, 0 75%, 0 25%); display: grid; place-items: center; font-family: var(--display); font-size: 24px; color: var(--bg); }
+.hex.sm { width: 30px; height: 34px; font-size: 15px; flex: none; }
+.hname { font-weight: 600; font-size: 14px; line-height: 1.1; }
+.stars { color: var(--gold); font-size: 13px; letter-spacing: 1px; line-height: 1; }
+.items { display: grid; gap: 3px; width: 100%; }
+.item { font-size: 11.5px; line-height: 1.2; border: 1px solid var(--line); border-radius: 4px; padding: 2px 4px; background: var(--felt-2); }
+.item.contra { border-color: var(--contra); color: var(--contra); }
+.stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 8px 16px; }
+.stat { display: grid; gap: 1px; }
+.stat .k { font-size: 11px; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); }
+.stat .v { font-family: var(--mono); font-variant-numeric: tabular-nums; font-size: 15px; }
+.good { color: var(--good); } .bad { color: var(--bad); } .warn { color: var(--warn); }
+details { border-top: 1px solid var(--line); padding-top: 10px; }
+details summary { cursor: pointer; color: var(--gold); font-size: 14px; }
+details[open] summary { margin-bottom: 8px; }
+.cols { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 14px; }
+ul.tips { margin: 0; padding-left: 18px; display: grid; gap: 4px; font-size: 14px; }
+ul.tips b { color: var(--gold); font-weight: 600; }
+.card { background: var(--felt); border: 1px solid var(--line); border-radius: 12px; padding: 16px 18px; display: grid; gap: 10px; align-content: start; min-width: 0; }
+.grid2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 16px; }
+.tbl { overflow-x: auto; border: 1px solid var(--line); border-radius: 10px; }
+table { border-collapse: collapse; width: 100%; font-size: 14px; }
+th, td { text-align: left; padding: 7px 10px; border-bottom: 1px solid var(--line); vertical-align: top; }
+th { font-size: 11px; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); font-weight: 600; background: var(--felt); white-space: nowrap; }
+th.sortable { cursor: pointer; } th.sortable:hover { color: var(--text); }
+tr:last-child td { border-bottom: 0; }
+tbody tr.click { cursor: pointer; } tbody tr.click:hover { background: var(--felt); }
+td.n { font-family: var(--mono); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.pill { display: inline-block; font-family: var(--mono); font-size: 12px; border-radius: 4px; padding: 1px 6px; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.pill.good { background: color-mix(in srgb, var(--good) 18%, transparent); color: var(--good); }
+.pill.warn { background: color-mix(in srgb, var(--warn) 18%, transparent); color: var(--warn); }
+.pill.bad { background: color-mix(in srgb, var(--bad) 22%, transparent); color: var(--bad); }
+.who { display: flex; gap: 8px; align-items: center; }
+.minibar { height: 6px; border-radius: 3px; background: var(--gold); min-width: 2px; }
+.track { background: var(--felt-2); border-radius: 3px; width: 120px; }
+ol.steps { list-style: none; margin: 0; padding: 0; display: grid; gap: 14px; counter-reset: step; }
+ol.steps > li { counter-increment: step; display: grid; grid-template-columns: 54px minmax(0, 1fr); gap: 14px; background: var(--felt); border: 1px solid var(--line); border-radius: 12px; padding: 14px 16px; }
+ol.steps > li::before { content: counter(step); font-family: var(--display); font-size: 44px; color: var(--gold); line-height: 1; }
+dialog { background: var(--felt); color: var(--text); border: 1px solid var(--line); border-radius: 14px; max-width: min(720px, 92vw); padding: 20px; }
+dialog::backdrop { background: rgb(0 0 0 / .6); }
+.empty { padding: 18px; border: 1px dashed var(--line); border-radius: 12px; color: var(--muted); }
+footer { margin-top: 36px; padding-top: 14px; border-top: 1px solid var(--line); color: var(--muted); font-size: 13px; display: grid; gap: 4px; }
+pre.notes { white-space: pre-wrap; font-family: var(--body); font-size: 14px; margin: 0; max-height: 420px; overflow: auto; }
+@media (max-width: 560px) { .comp { grid-template-columns: 40px minmax(0, 1fr); } .tier { font-size: 34px; } ol.steps > li { grid-template-columns: 1fr; } }
+</style>
+
+<div class="wrap">
+  <header class="top">
+    <h1>Runejack Méta</h1>
+    <p class="muted" id="sub">Compos, héros, objets, runes et stratégie, mesurés avec le simulateur du banc d’essai du jeu et mis à jour à chaque patch.</p>
+    <div class="chips" id="chips"></div>
+  </header>
+  <nav class="tabs" role="tablist" aria-label="Sections" id="tabs"></nav>
+  <main id="view"><div class="empty">Chargement des données…</div></main>
+  <footer id="foot"></footer>
+</div>
+<dialog id="dlg"><div id="dlg-body"></div><p style="margin-top:14px"><button id="dlg-close" style="all:unset;cursor:pointer;color:var(--gold)">Fermer</button></p></dialog>
+
+<script>
+const TABS = [['compos', 'Compos'], ['strategie', 'Stratégie'], ['heros', 'Héros'], ['objets', 'Objets'], ['runes', 'Runes'], ['benedictions', 'Bénédictions'], ['contrebande', 'Contrebandier'], ['boss', 'Boss'], ['joueurs', 'Vraies parties'], ['patch', 'Patch']];
+const $ = (s, el = document) => el.querySelector(s);
+const esc = (s) => String(s ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
+const nf = new Intl.NumberFormat('fr-FR', { maximumFractionDigits: 0 });
+const big = (x) => (x >= 1e9 ? `${(x / 1e9).toLocaleString('fr-FR', { maximumFractionDigits: 2 })} Md` : x >= 1e6 ? `${(x / 1e6).toLocaleString('fr-FR', { maximumFractionDigits: 2 })} M` : nf.format(Math.round(x)));
+const pct = (x, d = 0) => `${(x * 100).toLocaleString('fr-FR', { maximumFractionDigits: d })} %`;
+const sgn = (x) => `${x >= 0 ? '+' : ''}${pct(x)}`;
+const pillPct = (x) => `<span class="pill ${x < 0.4 ? 'bad' : x < 0.75 ? 'warn' : 'good'}">${pct(x)}</span>`;
+let M, S, H, IT, RU, BL, BO, FAM;
+const hero = (id) => H.get(id) ?? { name: id, families: ['?'] };
+const itemName = (id) => IT.get(id)?.name ?? id;
+const hexOf = (id, sm) => { const h = hero(id); return `<span class="hex ${sm ? 'sm ' : ''}${h.families[0]}" aria-hidden="true">${esc(h.name.split(/[\s-]/).map((w) => w[0]).join('').slice(0, 2))}</span>`; };
+
+async function load() {
+  try {
+    const r = await fetch('data.json', { cache: 'no-store' });
+    const d = await r.json();
+    M = d.meta; S = d.stats;
+  } catch (e) {
+    $('#view').innerHTML = `<div class="empty">Données introuvables (data.json). ${esc(e.message)}</div>`;
+    return;
+  }
+  H = new Map(M.heroes.map((h) => [h.id, h])); IT = new Map(M.items.map((i) => [i.id, i])); RU = new Map(M.runes.map((r) => [r.id, r]));
+  BL = new Map(M.blessings.map((b) => [b.id, b])); BO = new Map(M.bosses.map((b) => [b.id, b])); FAM = new Map(M.traits.map((t) => [t.id, t]));
+  const final = M.hp?.[1]?.find((e) => e.etage === M.settings.floors);
+  $('#chips').innerHTML = [`version <b>${esc(M.version)}</b>${M.versionDate ? ` · ${esc(M.versionDate)}` : ''}`, `${esc(M.settings.pact)} · fin de run`, `étoiles <b>${esc(M.settings.stars)}</b>`,
+    final ? `${M.settings.floors} étages · boss final <b>${nf.format(final.boss)} PV</b>` : '', `${big(M.roomsSimulated)} salles simulées`].filter(Boolean).map((c) => `<span class="chip">${c}</span>`).join('');
+  $('#foot').innerHTML = `<span>Analyse du ${new Date(M.generatedAt).toLocaleString('fr-FR')} · simulateur officiel du banc d’essai (play.runejack.com/banc), exécuté tel quel. Réglages : ${esc(M.settings.pact)}, bot du jeu, sans contrat, ${esc(M.settings.stars)}.</span><span>Les objets du Contrebandier sont exclus des compos ; ils apparaissent comme améliorations possibles.</span>`;
+  $('#tabs').innerHTML = TABS.map(([id, label]) => `<button role="tab" data-tab="${id}" aria-selected="false">${label}</button>`).join('');
+  $('#tabs').addEventListener('click', (e) => { const b = e.target.closest('button[data-tab]'); if (b) show(b.dataset.tab); });
+  const start = TABS.some(([id]) => id === location.hash.slice(1)) ? location.hash.slice(1) : 'compos';
+  show(start);
+  addEventListener('hashchange', () => { const t = location.hash.slice(1); if (TABS.some(([id]) => id === t)) show(t); });
+}
+function show(tab) {
+  document.querySelectorAll('#tabs button').forEach((b) => b.setAttribute('aria-selected', String(b.dataset.tab === tab)));
+  const v = $('#view');
+  v.innerHTML = `<section class="view" role="tabpanel">${VIEWS[tab]()}</section>`;
+  AFTER[tab]?.(v);
+  try { history.replaceState(null, '', `#${tab}`); } catch {}
+}
+
+// ---------- shared renderers ----------
+function seatHtml(h, i) {
+  const he = hero(h.id);
+  return `<div class="seat"><span class="sn">siège ${i + 1}</span>${hexOf(h.id)}<div class="stars">${'★'.repeat(h.star ?? 2)}</div>
+    <div class="hname">${esc(he.name)}</div><div class="items">${(h.items ?? []).map((it) => `<span class="item">${esc(itemName(it))}</span>`).join('') || '<span class="item muted">—</span>'}</div></div>`;
+}
+const famChips = (fams) => Object.entries(fams).sort((a, b) => b[1] - a[1]).map(([f, k]) => `<span class="fam ${f}">${esc(FAM.get(f)?.name ?? f)} ${k}</span>`).join('');
+function compCard(c) {
+  const F = M.settings.floors;
+  const counters = [...c.bosses].sort((a, b) => a.ratio - b.ratio).slice(0, 3);
+  const phaseTag = c.growthDependent ? '<span class="tag">fin de run (croissance)</span>' : c.cheap ? '<span class="tag">tôt dans la run</span>' : '<span class="tag">dès le milieu de run</span>';
+  return `<article class="comp"><div class="tier ${c.tier}">${c.tier}</div><div class="comp-body">
+    <div class="comp-head"><h3>${esc(c.name)}</h3>${phaseTag}${c.note ? `<span class="tag grey">${esc(c.note)}</span>` : ''}${c.origin === 'banco' ? '<span class="tag grey">Banco</span>' : ''}<div class="fams">${famChips(c.families)}</div></div>
+    <div class="scroll"><div class="board">${c.heroes.map(seatHtml).join('')}</div></div>
+    <div class="stats">
+      <div class="stat"><span class="k">Médiane / salle</span><span class="v">${big(c.fin.median)}</span></div>
+      <div class="stat"><span class="k">P10 – P90</span><span class="v">${big(c.fin.p10)} – ${big(c.fin.p90)}</span></div>
+      <div class="stat"><span class="k">Boss final (étage ${F})</span><span class="v ${c.fin.kill[F] >= 0.9 ? 'good' : c.fin.kill[F] >= 0.6 ? 'warn' : 'bad'}">${pct(c.fin.kill[F] ?? 0)}</span></div>
+      <div class="stat"><span class="k">Étage tenu</span><span class="v">${(c.fin.tenu ?? 0).toLocaleString('fr-FR', { maximumFractionDigits: 1 })}</span></div>
+      <div class="stat"><span class="k">Milieu de run</span><span class="v">${big(c.milieu.median)}</span></div>
+      <div class="stat"><span class="k">Pire contre</span><span class="v bad">${esc(BO.get(counters[0]?.id)?.name ?? '–')} ${counters[0] ? pct(counters[0].ratio) : ''}</span></div>
+    </div>
+    <details><summary>Runes, bénédictions, contrebande et contres</summary><div class="cols">
+      <div><h3 style="font-size:20px">Runes</h3>${c.runes ? `<ol style="margin:6px 0 0;padding-left:20px">${c.runes.build.map((r) => `<li>${esc(RU.get(r)?.name ?? r)}</li>`).join('')}</ol><p class="muted" style="font-size:13px">Ordre gauche → droite, sans rune secrète : ×${(1 + c.runes.buildGain).toLocaleString('fr-FR', { maximumFractionDigits: 1 })} sur la médiane.</p>` : '<p class="muted">Voir l’onglet Runes.</p>'}</div>
+      <div><h3 style="font-size:20px">Bénédictions</h3>${c.blessings ? `<ul class="tips">${c.blessings.slice(0, 4).map((b) => `<li><b>${esc(BL.get(b.id)?.name ?? b.id)}</b> ${sgn(b.gain)}</li>`).join('')}</ul>` : '<p class="muted">–</p>'}</div>
+      <div><h3 style="font-size:20px">Si le Contrebandier passe</h3>${c.contraband ? `<ul class="tips">${c.contraband.slice(0, 3).map((x) => `<li><b>${esc(itemName(x.item))}</b> sur ${esc(hero(x.hero).name)}${x.replaces ? ` à la place de ${esc(itemName(x.replaces))}` : ''} : ${sgn(x.gain)}</li>`).join('')}</ul>` : '<p class="muted">–</p>'}</div>
+      <div><h3 style="font-size:20px">Contres</h3><ul class="tips">${counters.map((b) => `<li><b>${esc(BO.get(b.id)?.name)}</b> : ${pct(b.ratio)} des dégâts</li>`).join('')}</ul></div>
+    </div></details>
+  </div></article>`;
+}
+
+// ---------- views ----------
+let compFilter = 'all';
+const VIEWS = {
+  compos: () => {
+    const best = M.comps[0];
+    return `<div class="bar"><div class="seg" id="cf">${[['all', 'Toutes'], ['early', 'Tôt'], ['mid', 'Milieu'], ['late', 'Fin'], ['banco', 'Banco']].map(([k, l]) => `<button data-f="${k}" aria-pressed="${compFilter === k}">${l}</button>`).join('')}</div>
+      <span class="muted" style="font-size:13px">Tier selon l’étage dont le boss tombe avec la médiane des dégâts (S : deux étages au-delà du final). Pastilles : nombre de héros par famille, emblèmes non compris.</span></div>
+      <div id="clist" style="display:grid;gap:14px"></div>`;
+  },
+  strategie: () => strategy(),
+  heros: () => `<div class="bar"><input type="search" id="hq" placeholder="Chercher un héros" aria-label="Chercher un héros"><select id="hf" aria-label="Famille"><option value="">Toutes les familles</option>${M.traits.map((t) => `<option value="${t.id}">${esc(t.name)}</option>`).join('')}</select></div><div class="tbl" id="ht"></div>`,
+  objets: () => `<p class="muted">Gain moyen du premier objet sur un héros seul à table (même héros, sans objet). Le meilleur kit de chaque héros est dans sa fiche (onglet Héros). Contrebande : onglet Contrebandier.</p><div class="tbl" id="it"></div>`,
+  runes: () => runes(),
+  benedictions: () => blessings(),
+  contrebande: () => contraband(),
+  boss: () => bosses(),
+  joueurs: () => realGames(),
+  patch: () => patch(),
+};
+const AFTER = {
+  compos: (v) => {
+    const draw = () => {
+      const list = M.comps.filter((c) => compFilter === 'all' || (compFilter === 'banco' ? c.origin === 'banco' : compFilter === 'early' ? c.cheap : compFilter === 'mid' ? !c.growthDependent : true));
+      $('#clist', v).innerHTML = list.map(compCard).join('') || '<div class="empty">Aucune compo pour ce filtre.</div>';
+    };
+    $('#cf', v).addEventListener('click', (e) => { const b = e.target.closest('button'); if (!b) return; compFilter = b.dataset.f; v.querySelectorAll('#cf button').forEach((x) => x.setAttribute('aria-pressed', String(x === b))); draw(); });
+    draw();
+  },
+  heros: (v) => {
+    let sortK = 'kit', dir = -1;
+    const draw = () => {
+      const q = $('#hq', v).value.toLowerCase(), f = $('#hf', v).value;
+      const rows = M.heroes.filter((h) => (!q || h.name.toLowerCase().includes(q)) && (!f || h.families.includes(f)));
+      const val = { kit: (h) => h.solo.kitMedian, cost: (h) => h.cost, name: (h) => h.name, naked: (h) => h.solo.naked };
+      rows.sort((a, b) => (typeof val[sortK](a) === 'string' ? val[sortK](a).localeCompare(val[sortK](b)) : val[sortK](a) - val[sortK](b)) * dir);
+      const max = Math.max(...M.heroes.map((h) => h.solo.kitMedian));
+      $('#ht', v).innerHTML = `<table><thead><tr><th class="sortable" data-k="name">Héros</th><th class="sortable" data-k="cost">Rareté</th><th>Familles</th><th class="sortable" data-k="kit">Seul, avec son kit</th><th>Meilleur kit</th><th>Dans les compos</th></tr></thead><tbody>${rows.map((h) => `<tr class="click" data-h="${h.id}">
+        <td><div class="who">${hexOf(h.id, true)}<b>${esc(h.name)}</b></div></td><td>${esc(h.rarity)} (${h.cost})</td><td>${h.families.map((f) => `<span class="fam ${f}">${esc(FAM.get(f)?.name ?? f)}</span>`).join(' ')}</td>
+        <td class="n"><div class="who"><div class="track"><div class="minibar" style="width:${(100 * h.solo.kitMedian) / max}%"></div></div>${big(h.solo.kitMedian)}</div></td>
+        <td>${h.solo.kit.map((i) => esc(itemName(i))).join(' · ')}</td><td class="n">${M.comps.filter((c) => c.heroes.some((x) => x.id === h.id)).length}</td></tr>`).join('')}</tbody></table>`;
+      v.querySelectorAll('th.sortable').forEach((th) => th.addEventListener('click', () => { if (sortK === th.dataset.k) dir = -dir; else { sortK = th.dataset.k; dir = th.dataset.k === 'name' ? 1 : -1; } draw(); }));
+      v.querySelectorAll('tr[data-h]').forEach((tr) => tr.addEventListener('click', () => heroDialog(tr.dataset.h)));
+    };
+    $('#hq', v).addEventListener('input', draw); $('#hf', v).addEventListener('change', draw); draw();
+  },
+  objets: (v) => {
+    const rows = M.items.filter((i) => !i.contraband).sort((a, b) => (b.avgGain ?? 0) - (a.avgGain ?? 0));
+    const max = Math.max(...rows.map((i) => i.avgGain ?? 0));
+    const statTxt = (s) => Object.entries(s).map(([k, x]) => ({ base: `+${x} force`, mult: `+${x} fureur`, maxTotalBonus: `limite +${x}`, bustRatio: `brûlé ${pct(x)}`, goldPerTable: `+${x} or/salle`, discardBonus: `+${x} défausse`, freeDiscards: `${x} défausse gratuite`, interestBonus: `intérêts +${x}` })[k] ?? '').filter(Boolean).join(' · ');
+    $('#it', v).innerHTML = `<table><thead><tr><th>Objet</th><th>Prix</th><th>Gain moyen (1er objet)</th><th>Stats</th><th>Effet</th><th>Meilleurs porteurs</th></tr></thead><tbody>${rows.map((i) => `<tr>
+      <td><b>${esc(i.name)}</b></td><td class="n">${i.price} or</td><td class="n"><div class="who"><div class="track"><div class="minibar" style="width:${(100 * Math.max(0, i.avgGain ?? 0)) / max}%"></div></div>${sgn(i.avgGain ?? 0)}</div></td>
+      <td>${esc(statTxt(i.stats))}</td><td>${esc(i.desc)}</td><td>${i.bestFor.slice(0, 3).map((x) => `${esc(hero(x.hero).name)} ${sgn(x.gain)}`).join('<br>')}</td></tr>`).join('')}</tbody></table>`;
+  },
+};
+function heroDialog(id) {
+  const h = H.get(id);
+  const comps = M.comps.filter((c) => c.heroes.some((x) => x.id === id));
+  $('#dlg-body').innerHTML = `<div class="who">${hexOf(id)}<div><h2>${esc(h.name)}</h2><div class="muted">${esc(h.rarity)} · ${h.families.map((f) => esc(FAM.get(f)?.name ?? f)).join(', ')}${h.unique ? ` · ${esc(h.unique)}` : ''}</div></div></div>
+    <ul class="tips" style="margin-top:12px">${[1, 2, 3].map((s) => `<li><b>${'★'.repeat(s)}</b> ${esc(h.effects[s])}</li>`).join('')}</ul>
+    <h3 style="margin-top:14px;font-size:21px">Meilleur kit (seul à table, ${h.solo.star}★)</h3>
+    <p>${h.solo.kit.map((i) => `<span class="item" style="display:inline-block;margin:2px">${esc(itemName(i))}</span>`).join('')} <span class="muted">${big(h.solo.naked)} → ${big(h.solo.kitMedian)} par salle</span></p>
+    <h3 style="margin-top:14px;font-size:21px">Contrebande</h3><p>${h.solo.contraband.map((c) => `<span class="item contra" style="display:inline-block;margin:2px">${esc(itemName(c.id))} ${sgn(c.gain)}</span>`).join('')}</p>
+    <h3 style="margin-top:14px;font-size:21px">Dans les compos</h3><p>${comps.length ? comps.map((c) => `${esc(c.name)} (${c.tier})`).join(' · ') : '<span class="muted">Aucune compo de la tier list.</span>'}</p>
+    ${h.grows ? '<p class="muted" style="margin-top:8px">Ce héros grandit au fil de la run : chiffres mesurés en fin de run.</p>' : ''}`;
+  $('#dlg').showModal();
+}
+$('#dlg-close').addEventListener('click', () => $('#dlg').close());
+
+function strategy() {
+  const F = M.settings.floors, e = M.economy, hp = M.hp?.[1] ?? [];
+  const top = M.comps[0], alt = M.comps.find((c) => !c.heroes.some((h) => h.id === M.pivot)) ?? M.comps[1];
+  const early = M.comps.filter((c) => c.cheap).slice(0, 2);
+  const op = (M.openers ?? []).filter((o) => o.seats === 3).slice(0, 3);
+  const bossHp = (k) => hp.find((x) => x.etage === k)?.boss;
+  const keyItems = [...new Set(top.heroes.flatMap((h) => h.items))];
+  const piv = hero(M.pivot).name;
+  return `<p class="muted">Le déroulé d’une run au ${esc(M.settings.pact)}, étage par étage, construit à partir des mesures de cette version. PV des boss : ${hp.slice(0, F + 1).map((x) => `${x.etage} : ${nf.format(x.boss)}`).join(' · ')}.</p>
+  <ol class="steps">
+    <li><div><h3>Départ · étages 1 et 2</h3><ul class="tips" style="margin-top:8px">
+      <li>Tu commences avec <b>${e.startGold} or</b> et <b>${e.startEssence ?? 3} essence</b>, soit de quoi faire une invocation. <b>Une salle perdue termine la run</b> : les boss font ${nf.format(bossHp(1) ?? 0)} puis ${nf.format(bossHp(2) ?? 0)} PV.</li>
+      <li><b>Remplis les sièges</b> avant d’acheter de l’XP (${e.xpCost} or pour ${e.xpGain} XP).</li>
+      <li>Joue <b>blackjack classique</b> : reste à 17, double 10-11 contre 2 à 9, défausse une carte basse sur 12-16.</li>
+      ${op.length ? `<li>Débuts les plus solides, héros de coût 1-2 sans objet, 3 sièges : ${op.map((o) => `<b>${esc(FAM.get(o.family)?.name ?? o.family)}</b> (${o.heroes.map((h) => esc(hero(h).name)).join(', ')}) : boss de l’étage 3 battu ${pct(o.kill[3] ?? 0)}`).join(' ; ')}.</li>` : ''}
+      <li>Garde l’or par tranches de ${e.interestStep} : chaque tranche rapporte 1 essence d’intérêts par salle gagnée.</li>
+    </ul></div></li>
+    <li><div><h3>Construire · étages 3 à 5</h3><ul class="tips" style="margin-top:8px">
+      <li>Vise un palier 4 de famille (4 héros) : ${early.length ? early.map((c) => `<b>${esc(c.name)}</b> (${big(c.milieu.median)} par salle en milieu de run)`).join(', ') : 'un Banco de la tier list'}.</li>
+      <li>À l’étal (${e.itemPrice} or, ${e.itemPriceFamily} pour emblèmes et Sceau royal), achète en priorité les objets de la compo finale : <b>${keyItems.map((i) => esc(itemName(i))).join(', ')}</b>.</li>
+      <li>Garde sur le banc (${e.benchSize} places) les copies des héros clés : <b>${top.heroes.map((h) => esc(hero(h.id).name)).join(', ')}</b>. Trois copies identiques fusionnent.</li>
+      <li>Le pivot de la meilleure compo est <b>${esc(piv)}</b> : dès que tu l’as à ${hero(M.pivot).solo?.star ?? 2}★, construis autour.</li>
+    </ul></div></li>
+    <li><div><h3>Finaliser · étages ${F - 1} et ${F}</h3><ul class="tips" style="margin-top:8px">
+      <li>Compo cible : <b>${esc(top.name)}</b> (${top.heroes.map((h) => esc(hero(h.id).name)).join(' · ')}), ${big(top.fin.median)} par salle, boss final battu ${pct(top.fin.kill[F] ?? 0)}.</li>
+      <li>Sans ${esc(piv)} : <b>${esc(alt.name)}</b> (${big(alt.fin.median)}).</li>
+      ${top.runes ? `<li>Runes, de gauche à droite : <b>${top.runes.build.map((r) => esc(RU.get(r)?.name ?? r)).join(' → ')}</b>.</li>` : ''}
+      ${top.blessings ? `<li>Bénédiction à prendre : <b>${esc(BL.get(top.blessings[0].id)?.name)}</b> (${sgn(top.blessings[0].gain)}).</li>` : ''}
+      <li>Regarde le boss annoncé avant la grande salle : contre <b>${esc(BO.get([...top.bosses].sort((a, b) => a.ratio - b.ratio)[0].id)?.name)}</b>, ta compo tombe à ${pct([...top.bosses].sort((a, b) => a.ratio - b.ratio)[0].ratio)} de ses dégâts.</li>
+    </ul></div></li>
+    <li><div><h3>Le Fond · étage ${F + 1} et au-delà</h3><ul class="tips" style="margin-top:8px">
+      <li>Les PV explosent : ${hp.filter((x) => x.etage > F).slice(0, 3).map((x) => `${x.etage} : ${big(x.boss)}`).join(' · ')}.</li>
+      <li>Grave les âmes sur ton porteur principal : chaque âme double ses dégâts.</li>
+      <li>Les compos qui tiennent le plus loin : ${M.comps.slice(0, 3).map((c) => `<b>${esc(c.name)}</b> (étage ${(c.fin.tenu ?? 0).toLocaleString('fr-FR', { maximumFractionDigits: 1 })})`).join(', ')}.</li>
+    </ul></div></li>
+  </ol>`;
+}
+function runes() {
+  const withR = M.comps.filter((c) => c.runes);
+  if (!withR.length) return '<div class="empty">Pas encore de mesure des runes.</div>';
+  return `<div class="grid2">${withR.map((c) => `<div class="card"><h3>${esc(c.name)}</h3>
+    <p class="muted">Build de 6 runes sans rune secrète (gauche → droite) : ×${(1 + c.runes.buildGain).toLocaleString('fr-FR', { maximumFractionDigits: 1 })}</p>
+    <ol style="margin:0;padding-left:20px">${c.runes.build.map((r) => `<li><b>${esc(RU.get(r)?.name)}</b> <span class="muted">${esc(RU.get(r)?.desc)}</span></li>`).join('')}</ol>
+    <h3 style="font-size:20px">Une rune seule</h3><div class="tbl"><table><tbody>${c.runes.single.slice(0, 10).map((x) => `<tr><td>${esc(RU.get(x.id)?.name)}${RU.get(x.id)?.rarity === 'secrete' ? ' <span class="tag grey">secrète</span>' : ''}</td><td class="n">${sgn(x.gain)}</td></tr>`).join('')}</tbody></table></div>
+    <p class="muted">À éviter : ${c.runes.worst.slice(-3).map((x) => `${esc(RU.get(x.id)?.name)} (${sgn(x.gain)})`).join(', ')}</p></div>`).join('')}</div>
+    <div class="card"><h3>Toutes les runes</h3><div class="tbl"><table><thead><tr><th>Rune</th><th>Rareté</th><th>Effet</th></tr></thead><tbody>${M.runes.map((r) => `<tr><td><b>${esc(r.name)}</b></td><td>${esc(r.rarity)}</td><td>${esc(r.desc)}</td></tr>`).join('')}</tbody></table></div></div>`;
+}
+function blessings() {
+  const cs = M.comps.filter((c) => c.blessings).slice(0, 4);
+  return `<p class="muted">Une bénédiction au choix parmi trois après le boss des étages 3, 6, 9… Gain sur la médiane des dégâts par salle.</p>
+  <div class="tbl"><table><thead><tr><th>Bénédiction</th><th>Effet</th>${cs.map((c) => `<th>${esc(c.name)}</th>`).join('')}</tr></thead><tbody>${M.blessings.map((b) => `<tr><td><b>${esc(b.name)}</b>${b.fromAnte ? ` <span class="tag grey">dès l’étage ${b.fromAnte}</span>` : ''}</td><td>${esc(b.desc)}</td>${cs.map((c) => { const g = c.blessings.find((x) => x.id === b.id)?.gain ?? 0; return `<td class="n"><span class="pill ${g > 0.3 ? 'good' : g > 0.05 ? 'warn' : 'bad'}">${sgn(g)}</span></td>`; }).join('')}</tr>`).join('')}</tbody></table></div>`;
+}
+function contraband() {
+  const e = M.economy;
+  const items = M.items.filter((i) => i.contraband);
+  return `<div class="card"><p>Le Contrebandier passe dans ${pct(e.traderChance ?? 0.13)} des boutiques à partir de l’étage ${e.traderFromAnte ?? 2}, ${e.traderVisits ?? 2} fois au plus par run, et ne laisse prendre qu’un objet. Les compos de la tier list n’en dépendent jamais : voici quoi prendre s’il passe.</p></div>
+  <div class="tbl"><table><thead><tr><th>Objet</th><th>Prix</th><th>Effet</th><th>Meilleurs porteurs (héros seul)</th></tr></thead><tbody>${items.map((i) => `<tr><td><b class="contra" style="color:var(--contra)">${esc(i.name)}</b></td><td class="n">${i.price} or</td><td>${esc(i.desc)}</td><td>${i.bestFor.slice(0, 3).map((x) => `${esc(hero(x.hero).name)} ${sgn(x.gain)}`).join('<br>')}</td></tr>`).join('')}</tbody></table></div>
+  <div class="grid2">${M.comps.filter((c) => c.contraband).map((c) => `<div class="card"><h3>${esc(c.name)}</h3><ul class="tips">${c.contraband.map((x) => `<li><b>${esc(itemName(x.item))}</b> sur ${esc(hero(x.hero).name)}${x.replaces ? `, à la place de ${esc(itemName(x.replaces))}` : ''} : <span class="good">${sgn(x.gain)}</span></li>`).join('')}</ul></div>`).join('')}</div>`;
+}
+function bosses() {
+  const cs = M.comps.slice(0, 6);
+  return `<p class="muted">Dégâts contre chaque boss en % d’une salle normale (même compo). Vert : peu gêné ; rouge : contre.</p>
+  <div class="tbl"><table><thead><tr><th>Boss</th><th>Vice</th><th>Règle</th>${cs.map((c) => `<th>${esc(c.name)}</th>`).join('')}</tr></thead><tbody>${M.bosses.map((b) => `<tr><td><b>${esc(b.name)}</b></td><td>${esc(b.vice)}</td><td>${esc(b.desc)}</td>${cs.map((c) => { const x = c.bosses.find((y) => y.id === b.id); return `<td>${x ? pillPct(x.ratio) : '–'}</td>`; }).join('')}</tr>`).join('')}</tbody></table></div>
+  <div class="card"><h3>PV par étage (${esc(M.settings.pact)})</h3><div class="tbl"><table><thead><tr><th>Étage</th><th>Vice</th><th>Petite salle</th><th>Grande salle</th><th>Boss</th></tr></thead><tbody>${(M.hp?.[1] ?? []).slice(0, M.settings.floors + 4).map((x) => `<tr><td class="n">${x.etage}</td><td>${esc(x.vice)}</td><td class="n">${big(x.petite)}</td><td class="n">${big(x.grande)}</td><td class="n">${big(x.boss)}</td></tr>`).join('')}</tbody></table></div></div>`;
+}
+function realGames() {
+  if (!S?.ok) return `<div class="empty">Pas de statistiques des vraies parties pour l’instant. Elles viennent de l’API du jeu et demandent une clé (play.runejack.com/admin, onglet Clés API), ajoutée aux secrets de l’environnement de mise à jour.</div>`;
+  const tables = Object.entries(S.routes).filter(([, v]) => !v.error).map(([k, v]) => {
+    const arr = Array.isArray(v) ? v : Object.values(v).find(Array.isArray) ?? [];
+    if (!arr.length || typeof arr[0] !== 'object') return '';
+    const cols = Object.keys(arr[0]).filter((c) => typeof arr[0][c] !== 'object').slice(0, 8);
+    return `<div class="card"><h3>${esc(k)}</h3><div class="tbl"><table><thead><tr>${cols.map((c) => `<th>${esc(c)}</th>`).join('')}</tr></thead><tbody>${arr.slice(0, 60).map((r) => `<tr>${cols.map((c) => `<td class="${typeof r[c] === 'number' ? 'n' : ''}">${typeof r[c] === 'number' ? (Math.abs(r[c]) <= 1 && !Number.isInteger(r[c]) ? pct(r[c], 1) : nf.format(r[c])) : esc(H.get(r[c])?.name ?? IT.get(r[c])?.name ?? r[c])}</td>`).join('')}</tr>`).join('')}</tbody></table></div></div>`;
+  }).join('');
+  return `<p class="muted">Statistiques des parties jouées, lues sur l’API du jeu le ${new Date(S.fetchedAt).toLocaleString('fr-FR')}.</p>${tables}`;
+}
+function patch() {
+  const ch = M.changes;
+  const list = (t, a) => (a?.length ? `<li><b>${t}</b> : ${a.map(esc).join(', ')}</li>` : '');
+  return `<div class="grid2"><div class="card"><h3>Version ${esc(M.version)}</h3><p class="muted">${esc(M.versionDate ?? '')} · ${esc(M.versionTitle ?? '')}</p>
+    ${ch ? `<p>Depuis la version analysée précédente (${esc(M.previousVersion)}) :</p><ul class="tips">${list('Héros ajoutés', ch.heroes.added)}${list('Héros retirés', ch.heroes.removed)}${list('Effets de héros modifiés', ch.heroText)}${list('Objets ajoutés', ch.items.added)}${list('Objets retirés', ch.items.removed)}${list('Runes ajoutées', ch.runes.added)}${list('Bénédictions ajoutées', ch.blessings.added)}</ul>` : '<p class="muted">Première analyse.</p>'}
+    <p class="muted">Analyse : ${(M.minutes ?? 0).toLocaleString('fr-FR', { maximumFractionDigits: 0 })} min, ${big(M.roomsSimulated)} salles simulées.</p></div>
+    <div class="card"><h3>Notes de patch</h3><pre class="notes">${esc(M.patchNotes ?? '')}</pre></div></div>`;
+}
+load();
+</script>

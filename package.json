@@ -1,0 +1,13 @@
+{
+  "name": "runejack-meta",
+  "private": true,
+  "type": "module",
+  "description": "Méta Runejack mesurée avec le banc d’essai du jeu, mise à jour à chaque patch",
+  "engines": { "node": ">=20" },
+  "scripts": {
+    "fetch": "NODE_USE_ENV_PROXY=1 node pipeline/fetch.mjs",
+    "update": "NODE_USE_ENV_PROXY=1 node pipeline/update.mjs",
+    "analyze": "NODE_USE_ENV_PROXY=1 node pipeline/update.mjs --force",
+    "test": "node --test test/*.test.mjs"
+  }
+}
