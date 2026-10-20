@@ -31,10 +31,18 @@ Les objets du Contrebandier n’entrent jamais dans les compos. Ils sont propos�
 npm run update                # analyse seulement si la version du jeu a changé
 npm run analyze               # force une nouvelle analyse
 SCALE=0.2 npm run analyze     # analyse rapide (test)
-npx serve app                 # ouvrir l’app en local (elle lit app/data.json)
+npm run site && npx serve public   # ouvrir le site en local
 ```
 
 Node 22 ou plus, sans dépendance. Derrière un proxy, `NODE_USE_ENV_PROXY=1` est déjà dans les scripts npm.
+
+## Héberger le site (Vercel)
+
+Le site est statique : `npm run site` construit `public/` (page complète et `data.json`). Avec `vercel.json`, Vercel lance cette construction lui-même.
+
+1. Sur [vercel.com/new](https://vercel.com/new), importe le dépôt `alexis-da/runejack-meta`.
+2. Laisse les réglages proposés : ils viennent de `vercel.json` (pas de framework, commande `node pipeline/build-site.mjs`, dossier `public`). Clique **Deploy**.
+3. Chaque push sur `main` redéploie le site, y compris ceux de la tâche planifiée : le site suit donc les patchs tout seul.
 
 ## Statistiques des vraies parties (facultatif)
 
