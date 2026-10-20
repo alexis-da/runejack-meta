@@ -125,6 +125,18 @@ const sgn = (x) => `${x >= 0 ? '+' : ''}${pct(x)}`;
 const pillPct = (x) => `<span class="pill ${x < 0.4 ? 'bad' : x < 0.75 ? 'warn' : 'good'}">${pct(x)}</span>`;
 let M, S, H, IT, RU, BL, BO, FAM;
 const hero = (id) => H.get(id) ?? { name: id, families: ['?'] };
+// real games (API): rates are given in percent by the API
+let RH = new Map(), RI = new Map(), RR = new Map(), RB = new Map();
+function realMaps() {
+  if (!S?.ok) return;
+  const r = S.routes;
+  if (Array.isArray(r.heros)) RH = new Map(r.heros.map((x) => [x.id, x]));
+  if (r.objets?.objets) RI = new Map([...r.objets.objets, ...(r.objets.emblemes ?? [])].map((x) => [x.id, x]));
+  if (Array.isArray(r.runes)) RR = new Map(r.runes.map((x) => [x.id ?? x.nom, x]));
+  if (r.benedictions?.benedictions) RB = new Map(r.benedictions.benedictions.map((x) => [x.id, x]));
+}
+const rate = (x) => (x == null ? '–' : `${Number(x).toLocaleString('fr-FR', { maximumFractionDigits: 1 })} %`);
+const realCell = (x) => (x ? `<span title="${x.runs} runs">${rate(x.tauxVictoire)}</span> <span class="muted" style="font-size:12px">(${x.runs})</span>` : '<span class="muted">–</span>');
 const itemName = (id) => IT.get(id)?.name ?? id;
 const hexOf = (id, sm) => { const h = hero(id); return `<span class="hex ${sm ? 'sm ' : ''}${h.families[0]}" aria-hidden="true">${esc(h.name.split(/[\s-]/).map((w) => w[0]).join('').slice(0, 2))}</span>`; };
 
@@ -139,6 +151,7 @@ async function load() {
   }
   H = new Map(M.heroes.map((h) => [h.id, h])); IT = new Map(M.items.map((i) => [i.id, i])); RU = new Map(M.runes.map((r) => [r.id, r]));
   BL = new Map(M.blessings.map((b) => [b.id, b])); BO = new Map(M.bosses.map((b) => [b.id, b])); FAM = new Map(M.traits.map((t) => [t.id, t]));
+  realMaps();
   const final = M.hp?.[1]?.find((e) => e.etage === M.settings.floors);
   $('#chips').innerHTML = [`version <b>${esc(M.version)}</b>${M.versionDate ? ` · ${esc(M.versionDate)}` : ''}`, `${esc(M.settings.pact)} · fin de run`, `étoiles <b>${esc(M.settings.stars)}</b>`,
     final ? `${M.settings.floors} étages · boss final <b>${nf.format(final.boss)} PV</b>` : '', `${big(M.roomsSimulated)} salles simulées`].filter(Boolean).map((c) => `<span class="chip">${c}</span>`).join('');
@@ -221,13 +234,13 @@ const AFTER = {
     const draw = () => {
       const q = $('#hq', v).value.toLowerCase(), f = $('#hf', v).value;
       const rows = M.heroes.filter((h) => (!q || h.name.toLowerCase().includes(q)) && (!f || h.families.includes(f)));
-      const val = { kit: (h) => h.solo.kitMedian, cost: (h) => h.cost, name: (h) => h.name, naked: (h) => h.solo.naked };
+      const val = { kit: (h) => h.solo.kitMedian, cost: (h) => h.cost, name: (h) => h.name, naked: (h) => h.solo.naked, pres: (h) => RH.get(h.id)?.tauxPresence ?? -1, wr: (h) => RH.get(h.id)?.tauxVictoire ?? -1 };
       rows.sort((a, b) => (typeof val[sortK](a) === 'string' ? val[sortK](a).localeCompare(val[sortK](b)) : val[sortK](a) - val[sortK](b)) * dir);
       const max = Math.max(...M.heroes.map((h) => h.solo.kitMedian));
-      $('#ht', v).innerHTML = `<table><thead><tr><th class="sortable" data-k="name">Héros</th><th class="sortable" data-k="cost">Rareté</th><th>Familles</th><th class="sortable" data-k="kit">Seul, avec son kit</th><th>Meilleur kit</th><th>Dans les compos</th></tr></thead><tbody>${rows.map((h) => `<tr class="click" data-h="${h.id}">
+      $('#ht', v).innerHTML = `<table><thead><tr><th class="sortable" data-k="name">Héros</th><th class="sortable" data-k="cost">Rareté</th><th>Familles</th><th class="sortable" data-k="kit">Seul, avec son kit</th><th>Meilleur kit</th><th>Dans les compos</th><th class="sortable" data-k="pres">Joué (réel)</th><th class="sortable" data-k="wr">Victoire (réel)</th></tr></thead><tbody>${rows.map((h) => `<tr class="click" data-h="${h.id}">
         <td><div class="who">${hexOf(h.id, true)}<b>${esc(h.name)}</b></div></td><td>${esc(h.rarity)} (${h.cost})</td><td>${h.families.map((f) => `<span class="fam ${f}">${esc(FAM.get(f)?.name ?? f)}</span>`).join(' ')}</td>
         <td class="n"><div class="who"><div class="track"><div class="minibar" style="width:${(100 * h.solo.kitMedian) / max}%"></div></div>${big(h.solo.kitMedian)}</div></td>
-        <td>${h.solo.kit.map((i) => esc(itemName(i))).join(' · ')}</td><td class="n">${M.comps.filter((c) => c.heroes.some((x) => x.id === h.id)).length}</td></tr>`).join('')}</tbody></table>`;
+        <td>${h.solo.kit.map((i) => esc(itemName(i))).join(' · ')}</td><td class="n">${M.comps.filter((c) => c.heroes.some((x) => x.id === h.id)).length}</td><td class="n">${rate(RH.get(h.id)?.tauxPresence)}</td><td class="n">${realCell(RH.get(h.id))}</td></tr>`).join('')}</tbody></table>`;
       v.querySelectorAll('th.sortable').forEach((th) => th.addEventListener('click', () => { if (sortK === th.dataset.k) dir = -dir; else { sortK = th.dataset.k; dir = th.dataset.k === 'name' ? 1 : -1; } draw(); }));
       v.querySelectorAll('tr[data-h]').forEach((tr) => tr.addEventListener('click', () => heroDialog(tr.dataset.h)));
     };
@@ -237,9 +250,9 @@ const AFTER = {
     const rows = M.items.filter((i) => !i.contraband).sort((a, b) => (b.avgGain ?? 0) - (a.avgGain ?? 0));
     const max = Math.max(...rows.map((i) => i.avgGain ?? 0));
     const statTxt = (s) => Object.entries(s).map(([k, x]) => ({ base: `+${x} force`, mult: `+${x} fureur`, maxTotalBonus: `limite +${x}`, bustRatio: `brûlé ${pct(x)}`, goldPerTable: `+${x} or/salle`, discardBonus: `+${x} défausse`, freeDiscards: `${x} défausse gratuite`, interestBonus: `intérêts +${x}` })[k] ?? '').filter(Boolean).join(' · ');
-    $('#it', v).innerHTML = `<table><thead><tr><th>Objet</th><th>Prix</th><th>Gain moyen (1er objet)</th><th>Stats</th><th>Effet</th><th>Meilleurs porteurs</th></tr></thead><tbody>${rows.map((i) => `<tr>
+    $('#it', v).innerHTML = `<table><thead><tr><th>Objet</th><th>Prix</th><th>Gain moyen (1er objet)</th><th>Stats</th><th>Effet</th><th>Meilleurs porteurs</th><th>Victoire (réel)</th></tr></thead><tbody>${rows.map((i) => `<tr>
       <td><b>${esc(i.name)}</b></td><td class="n">${i.price} or</td><td class="n"><div class="who"><div class="track"><div class="minibar" style="width:${(100 * Math.max(0, i.avgGain ?? 0)) / max}%"></div></div>${sgn(i.avgGain ?? 0)}</div></td>
-      <td>${esc(statTxt(i.stats))}</td><td>${esc(i.desc)}</td><td>${i.bestFor.slice(0, 3).map((x) => `${esc(hero(x.hero).name)} ${sgn(x.gain)}`).join('<br>')}</td></tr>`).join('')}</tbody></table>`;
+      <td>${esc(statTxt(i.stats))}</td><td>${esc(i.desc)}</td><td>${i.bestFor.slice(0, 3).map((x) => `${esc(hero(x.hero).name)} ${sgn(x.gain)}`).join('<br>')}</td><td class="n">${realCell(RI.get(i.id))}</td></tr>`).join('')}</tbody></table>`;
   },
 };
 function heroDialog(id) {
@@ -323,13 +336,27 @@ function bosses() {
 }
 function realGames() {
   if (!S?.ok) return `<div class="empty">Pas de statistiques des vraies parties pour l’instant. Elles viennent de l’API du jeu et demandent une clé (play.runejack.com/admin, onglet Clés API), ajoutée aux secrets de l’environnement de mise à jour.</div>`;
-  const tables = Object.entries(S.routes).filter(([, v]) => !v.error).map(([k, v]) => {
-    const arr = Array.isArray(v) ? v : Object.values(v).find(Array.isArray) ?? [];
-    if (!arr.length || typeof arr[0] !== 'object') return '';
-    const cols = Object.keys(arr[0]).filter((c) => typeof arr[0][c] !== 'object').slice(0, 8);
-    return `<div class="card"><h3>${esc(k)}</h3><div class="tbl"><table><thead><tr>${cols.map((c) => `<th>${esc(c)}</th>`).join('')}</tr></thead><tbody>${arr.slice(0, 60).map((r) => `<tr>${cols.map((c) => `<td class="${typeof r[c] === 'number' ? 'n' : ''}">${typeof r[c] === 'number' ? (Math.abs(r[c]) <= 1 && !Number.isInteger(r[c]) ? pct(r[c], 1) : nf.format(r[c])) : esc(H.get(r[c])?.name ?? IT.get(r[c])?.name ?? r[c])}</td>`).join('')}</tr>`).join('')}</tbody></table></div></div>`;
-  }).join('');
-  return `<p class="muted">Statistiques des parties jouées, lues sur l’API du jeu le ${new Date(S.fetchedAt).toLocaleString('fr-FR')}.</p>${tables}`;
+  const r = S.routes;
+  const tbl = (head, rows) => `<div class="tbl"><table><thead><tr>${head.map((h) => `<th>${h}</th>`).join('')}</tr></thead><tbody>${rows.join('')}</tbody></table></div>`;
+  const bar = (x) => `<div class="who"><div class="track"><div class="minibar" style="width:${Math.max(0, Math.min(100, x ?? 0))}%"></div></div>${rate(x)}</div>`;
+  const runs = r.objets?.runsSuivies ?? r.benedictions?.runsSuivies;
+  const heroes = Array.isArray(r.heros) ? [...r.heros].sort((a, b) => b.tauxPresence - a.tauxPresence) : [];
+  const items = r.objets?.objets ? [...r.objets.objets, ...(r.objets.emblemes ?? [])].sort((a, b) => b.tauxPresence - a.tauxPresence) : [];
+  const runes = Array.isArray(r.runes) ? [...r.runes].sort((a, b) => b.tauxPresence - a.tauxPresence) : [];
+  const bless = r.benedictions?.benedictions ? [...r.benedictions.benedictions].sort((a, b) => b.tauxPresence - a.tauxPresence) : [];
+  const pactName = (n) => M.pacts.find((p) => p.level === n)?.name ?? n;
+  return `<div class="card"><p>Ce que font les joueurs, d’après l’API du jeu (lue le ${new Date(S.fetchedAt).toLocaleString('fr-FR')}${runs ? `, ${runs} runs suivies` : ''}). Les petits échantillons bougent beaucoup : le nombre de runs est entre parenthèses. À comparer avec les mesures du banc dans les autres onglets.</p></div>
+  ${r.salles?.etages ? `<div class="card"><h3>Survie par étage</h3>${tbl(['Étage', 'Runs arrivées', 'Défaites', 'Survie'], r.salles.etages.slice(0, 12).map((e) => `<tr><td class="n">${e.etage}</td><td class="n">${e.atteint}</td><td class="n">${e.defaites}</td><td>${bar(e.tauxSurvie)}</td></tr>`))}</div>` : ''}
+  <div class="grid2">
+    ${r.decks?.maledictions ? `<div class="card"><h3>Pactes</h3>${tbl(['Pacte', 'Runs', 'Victoire', 'Étage moyen'], r.decks.maledictions.map((x) => `<tr><td>${esc(pactName(x.niveau))}</td><td class="n">${x.runs}</td><td>${bar(x.tauxVictoire)}</td><td class="n">${x.etageMoyen}</td></tr>`))}</div>` : ''}
+    ${r.decks?.decks ? `<div class="card"><h3>Contrats</h3>${tbl(['Contrat', 'Runs', 'Victoire', 'Étage moyen'], r.decks.decks.map((x) => `<tr><td>${esc(x.nom)}</td><td class="n">${x.runs}</td><td>${bar(x.tauxVictoire)}</td><td class="n">${x.etageMoyen}</td></tr>`))}</div>` : ''}
+  </div>
+  ${heroes.length ? `<div class="card"><h3>Héros</h3>${tbl(['Héros', 'Joué', 'Victoire', 'Étage moyen', 'Étoiles moy.', 'Tirages gagnés'], heroes.map((x) => `<tr><td><div class="who">${H.has(x.id) ? hexOf(x.id, true) : ''}<b>${esc(x.nom)}</b></div></td><td>${bar(x.tauxPresence)}</td><td class="n">${rate(x.tauxVictoire)} <span class="muted">(${x.runs})</span></td><td class="n">${x.etageMoyen}</td><td class="n">${x.etoilesMoyennes}</td><td class="n">${rate(x.tauxTirage)}</td></tr>`))}</div>` : ''}
+  <div class="grid2">
+    ${items.length ? `<div class="card"><h3>Objets</h3>${tbl(['Objet', 'Joué', 'Victoire', 'Étage moyen'], items.slice(0, 25).map((x) => `<tr><td><b>${esc(x.nom)}</b></td><td>${bar(x.tauxPresence)}</td><td class="n">${rate(x.tauxVictoire)} <span class="muted">(${x.runs})</span></td><td class="n">${x.etageMoyen}</td></tr>`))}</div>` : ''}
+    ${runes.length ? `<div class="card"><h3>Runes</h3>${tbl(['Rune', 'Jouée', 'Victoire'], runes.slice(0, 25).map((x) => `<tr><td><b>${esc(x.nom)}</b></td><td>${bar(x.tauxPresence)}</td><td class="n">${rate(x.tauxVictoire)} <span class="muted">(${x.runs})</span></td></tr>`))}</div>` : ''}
+  </div>
+  ${bless.length ? `<div class="card"><h3>Bénédictions</h3>${tbl(['Bénédiction', 'Prise', 'Victoire', 'Étage moyen'], bless.map((x) => `<tr><td><b>${esc(x.nom)}</b></td><td>${bar(x.tauxPresence)}</td><td class="n">${rate(x.tauxVictoire)} <span class="muted">(${x.runs})</span></td><td class="n">${x.etageMoyen}</td></tr>`))}</div>` : ''}`;
 }
 function patch() {
   const ch = M.changes;

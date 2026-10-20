@@ -43,7 +43,7 @@ Node 22 ou plus, sans dépendance. Derrière un proxy, `NODE_USE_ENV_PROXY=1` es
    - soit comme secret réseau de l’environnement cloud (en-tête `Authorization: Bearer <clé>` pour `play.runejack.com`) ;
    - soit comme variable d’environnement `RUNEJACK_API_KEY`.
 
-Sans clé, l’onglet « Vraies parties » reste vide et tout le reste fonctionne.
+Sans clé, l’onglet « Vraies parties » reste vide et tout le reste fonctionne. Avec une clé, ces statistiques sont rafraîchies à chaque passage de la tâche planifiée, même sans nouveau patch.
 
 ## Mise à jour automatique
 

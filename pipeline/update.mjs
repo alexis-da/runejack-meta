@@ -1,5 +1,6 @@
 // Checks the game version and, if it changed (or with --force), runs the whole analysis, refreshes the
-// real-game stats and rebuilds app/data.json. Exit codes: 0 = updated, 10 = already up to date.
+// real-game stats and rebuilds app/data.json. Exit codes: 0 = new version analysed, 11 = same version but
+// real-game stats refreshed (republish), 10 = nothing new (no API stats either).
 import fs from 'node:fs';
 import { fetchGame } from './fetch.mjs';
 import { analyze } from './analyze.mjs';
@@ -32,4 +33,5 @@ const stats = await fetchStats();
 console.log(stats.ok ? 'statistiques des vraies parties : ok' : 'statistiques des vraies parties : indisponibles (clé API absente ou refusée)');
 fs.mkdirSync('app', { recursive: true });
 fs.writeFileSync('app/data.json', JSON.stringify({ meta, stats }));
-process.exit(meta === prev && !force && !statsOnly ? 10 : 0);
+const analysed = meta !== prev || force;
+process.exit(analysed && !statsOnly ? 0 : stats.ok ? 11 : 10);
