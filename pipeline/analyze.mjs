@@ -3,20 +3,14 @@
 import fs from 'node:fs';
 import { BancPool } from './pool.mjs';
 import { makeBanc, loadWorkerSource } from './banc.mjs';
+import { carryOf } from './carry.mjs';
+import { MOMENTS, heroCounter, makeSetup } from './setup.mjs';
 
 const SCALE = +(process.env.SCALE ?? 0.5);
 const n = (x) => Math.max(40, Math.round(x * SCALE));
 const log = (...a) => console.log(`[${new Date().toISOString().slice(11, 19)}]`, ...a);
 
 const RARITY = { 1: 'Commun', 2: 'Rare', 3: 'Épique', 4: 'Légendaire', 5: 'Secrète' };
-// banc presets (moment de la run)
-const MOMENTS = {
-  milieu: { gold: 25, tablesWon: 10, busts: 8, rerolls: 12, wins: 30, highHands: 30 },
-  fin: { gold: 40, tablesWon: 22, busts: 18, rerolls: 30, wins: 70, highHands: 40 },
-};
-const heroCounter = (id, m) => (id === 'dauphin' || id === 'apprenti' ? m.tablesWon : id === 'goule' ? m.busts : id === 'joaillier' ? m.rerolls : undefined);
-const runeCounter = (id, m) => (id === 'gloutonne' ? m.wins : id === 'marche' ? m.rerolls : id === 'conquete' || id === 'infini' ? m.tablesWon : id === 'soif' ? m.highHands : 0);
-
 export async function analyze({ version, workerPath, previous = null, out = 'data/meta.json' }) {
   const t0 = Date.now();
   const banc0 = makeBanc(loadWorkerSource(workerPath));
@@ -29,17 +23,7 @@ export async function analyze({ version, workerPath, previous = null, out = 'dat
   const FAMILIES = Object.keys(D.traits);
   const CURSE = 1; // pacte du Joueur (banc par défaut)
 
-  const setup = (comp, { moment = 'fin', boss = null, curse = CURSE } = {}) => {
-    const m = MOMENTS[moment];
-    const runeIds = Array.isArray(comp.runes) ? comp.runes : [];
-    const blessIds = Array.isArray(comp.blessings) ? comp.blessings : [];
-    return {
-      seats: comp.heroes.map((h) => (h ? { id: h.id, star: h.star ?? star(h.id), items: (h.items ?? []).filter(Boolean), ...(heroCounter(h.id, m) !== undefined ? { counter: heroCounter(h.id, m) } : {}) } : null)),
-      runes: runeIds.map((id) => ({ id, counter: runeCounter(id, m) })),
-      gold: m.gold, deck: 'classique', curse, policy: 'normal', blessings: blessIds,
-      ...(boss ? { rules: D.bosses.find((b) => b.id === boss).rules } : {}),
-    };
-  };
+  const setup = makeSetup(D, CURSE);
   const pool = new BancPool(workerPath);
   const cache = new Map();
   // only what the simulator reads (evaluated comps also carry their results)
@@ -217,6 +201,8 @@ export async function analyze({ version, workerPath, previous = null, out = 'dat
     c.growthDependent = c.milieu.median < 0.7 * c.fin.median;
     c.cheap = c.heroes.every((h) => HERO.get(h.id).cost <= 3);
   }
+  // carry: the hero whose items matter most
+  await Promise.all(comps.map(async (c) => Object.assign(c, await carryOf(c, (heroes) => med({ heroes }, n(3000))))));
   log('C. évaluation', `${((Date.now() - t0) / 60000).toFixed(1)} min`);
 
   // ---------- D. contraband upgrades per comp ----------

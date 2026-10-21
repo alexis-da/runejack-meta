@@ -56,6 +56,10 @@ input[type="search"], select { background: var(--felt); color: var(--text); bord
 .board { display: grid; grid-template-columns: repeat(5, minmax(118px, 1fr)); gap: 10px; min-width: 610px; }
 .seat { display: grid; justify-items: center; align-content: start; gap: 5px; text-align: center; padding: 10px 6px; border-radius: 10px; background: color-mix(in srgb, var(--bg) 45%, transparent); }
 .sn { font-family: var(--mono); font-size: 11px; color: var(--muted); }
+.seat.carry { box-shadow: inset 0 0 0 2px var(--gold); }
+.carry-tag { font-size: 10px; font-weight: 700; letter-spacing: .06em; border-radius: 3px; padding: 0 4px; background: var(--gold); color: var(--bg); }
+.carry-line { font-size: 14px; margin: -2px 0 0; }
+.carry-line b { color: var(--gold); }
 .hex { width: 52px; height: 58px; clip-path: polygon(50% 0, 100% 25%, 100% 75%, 50% 100%, 0 75%, 0 25%); display: grid; place-items: center; font-family: var(--display); font-size: 24px; color: var(--bg); }
 .hex.sm { width: 30px; height: 34px; font-size: 15px; flex: none; }
 .hname { font-weight: 600; font-size: 14px; line-height: 1.1; }
@@ -171,19 +175,24 @@ function show(tab) {
 }
 
 // ---------- shared renderers ----------
-function seatHtml(h, i) {
+function seatHtml(h, i, carry = false) {
   const he = hero(h.id);
-  return `<div class="seat"><span class="sn">siège ${i + 1}</span>${hexOf(h.id)}<div class="stars">${'★'.repeat(h.star ?? 2)}</div>
+  return `<div class="seat${carry ? ' carry' : ''}"><span class="sn">siège ${i + 1}${carry ? ' <span class="carry-tag">CARRY</span>' : ''}</span>${hexOf(h.id)}<div class="stars">${'★'.repeat(h.star ?? 2)}</div>
     <div class="hname">${esc(he.name)}</div><div class="items">${(h.items ?? []).map((it) => `<span class="item">${esc(itemName(it))}</span>`).join('') || '<span class="item muted">—</span>'}</div></div>`;
 }
 const famChips = (fams) => Object.entries(fams).sort((a, b) => b[1] - a[1]).map(([f, k]) => `<span class="fam ${f}">${esc(FAM.get(f)?.name ?? f)} ${k}</span>`).join('');
 function compCard(c) {
   const F = M.settings.floors;
   const counters = [...c.bosses].sort((a, b) => a.ratio - b.ratio).slice(0, 3);
+  const carries = c.carry && !c.carry.spread ? c.carry.heroes : [];
+  const lossOf = (id) => c.heroes.find((h) => h.id === id)?.itemLoss ?? 0;
+  const carryText = !c.carry ? '–' : c.carry.spread ? 'dégâts répartis' : carries.map((id) => esc(hero(id).name)).join(' + ');
+  const carryTitle = c.carry ? `Sans ses objets, la compo perd : ${c.heroes.map((h) => `${hero(h.id).name} ${pct(h.itemLoss ?? 0)}`).join(', ')}` : '';
   const phaseTag = c.growthDependent ? '<span class="tag">fin de run (croissance)</span>' : c.cheap ? '<span class="tag">tôt dans la run</span>' : '<span class="tag">dès le milieu de run</span>';
   return `<article class="comp"><div class="tier ${c.tier}">${c.tier}</div><div class="comp-body">
     <div class="comp-head"><h3>${esc(c.name)}</h3>${phaseTag}${c.note ? `<span class="tag grey">${esc(c.note)}</span>` : ''}${c.origin === 'banco' ? '<span class="tag grey">Banco</span>' : ''}<div class="fams">${famChips(c.families)}</div></div>
-    <div class="scroll"><div class="board">${c.heroes.map(seatHtml).join('')}</div></div>
+    <div class="scroll"><div class="board">${c.heroes.map((h, i) => seatHtml(h, i, carries.includes(h.id))).join('')}</div></div>
+    ${c.carry ? `<p class="carry-line" title="${esc(carryTitle)}"><b>Carry : ${carryText}</b> <span class="muted">${carries.length ? `(sans les objets ${/^[aeiouyéèêh]/i.test(hero(carries[0]).name) ? 'd’' : 'de '}${esc(hero(carries[0]).name)}, la compo perd ${pct(lossOf(carries[0]))})` : '(aucun héros ne porte la compo seul : les objets pèsent autant sur chacun)'}</span></p>` : ''}
     <div class="stats">
       <div class="stat"><span class="k">Médiane / salle</span><span class="v">${big(c.fin.median)}</span></div>
       <div class="stat"><span class="k">P10 – P90</span><span class="v">${big(c.fin.p10)} – ${big(c.fin.p90)}</span></div>
@@ -207,7 +216,7 @@ const VIEWS = {
   compos: () => {
     const best = M.comps[0];
     return `<div class="bar"><div class="seg" id="cf">${[['all', 'Toutes'], ['early', 'Tôt'], ['mid', 'Milieu'], ['late', 'Fin'], ['banco', 'Banco']].map(([k, l]) => `<button data-f="${k}" aria-pressed="${compFilter === k}">${l}</button>`).join('')}</div>
-      <span class="muted" style="font-size:13px">Tier selon l’étage dont le boss tombe avec la médiane des dégâts (S : deux étages au-delà du final). Pastilles : nombre de héros par famille, emblèmes non compris.</span></div>
+      <span class="muted" style="font-size:13px">Tier selon l’étage dont le boss tombe avec la médiane des dégâts (S : deux étages au-delà du final). Pastilles : nombre de héros par famille, emblèmes non compris. Carry : le héros dont les objets comptent le plus (ce que la compo perd si on les lui retire) ; « réparti » quand trois héros ou plus pèsent autant.</span></div>
       <div id="clist" style="display:grid;gap:14px"></div>`;
   },
   strategie: () => strategy(),
