@@ -23,3 +23,18 @@ test('une salle se simule', { skip: !worker && 'pas de worker en cache' }, () =>
   assert.ok(r.result.p50 > 0);
   assert.ok(r.etages.length >= 7);
 });
+
+test('une run complète se joue jusqu’au bout', { skip: !worker && 'pas de worker en cache' }, async () => {
+  const { makeRunBot, PLANS } = await import('../pipeline/runbot.mjs');
+  const b = makeBanc(loadWorkerSource(worker));
+  assert.ok(b.data.Run && b.data.playDeal, 'moteur de run et bot de table exposés');
+  const heroes = new Map(b.data.heroes.map((h) => [h.id, h]));
+  const ctx = { Run: b.data.Run, playDeal: b.data.playDeal, heroes, strength: new Map(), early: new Map() };
+  const target = { heroes: b.data.heroes.slice(0, 5).map((h) => ({ id: h.id, items: [] })) };
+  for (let seed = 1; seed <= 3; seed++) {
+    const run = new ctx.Run(seed, 0, 1, 'classique');
+    const r = makeRunBot(ctx, target, PLANS.depart).play(run);
+    assert.ok(['victory', 'lost'].includes(run.phase), `run ${seed} terminée (${run.phase})`);
+    assert.ok(r.floor >= 1 && r.log.length >= 1);
+  }
+});

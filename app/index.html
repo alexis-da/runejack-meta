@@ -60,6 +60,14 @@ input[type="search"], select { background: var(--felt); color: var(--text); bord
 .carry-tag { font-size: 10px; font-weight: 700; letter-spacing: .06em; border-radius: 3px; padding: 0 4px; background: var(--gold); color: var(--bg); }
 .carry-line { font-size: 14px; margin: -2px 0 0; }
 .carry-line b { color: var(--gold); }
+ol.floors { list-style: none; margin: 8px 0 0; padding: 0; display: grid; gap: 10px; }
+ol.floors > li { display: grid; grid-template-columns: 74px minmax(0, 1fr); gap: 12px; padding: 10px 12px; border-radius: 10px; background: color-mix(in srgb, var(--bg) 45%, transparent); }
+.fl-num { display: grid; align-content: start; gap: 4px; }
+.fl-num b { font-family: var(--display); font-size: 26px; line-height: 1; color: var(--gold); font-weight: 400; }
+.fl-num span { font-size: 12px; color: var(--muted); }
+.hchip { display: inline-flex; align-items: center; gap: 4px; font-size: 13px; margin: 2px 6px 2px 0; }
+.hchip .muted { font-size: 12px; }
+@media (max-width: 560px) { ol.floors > li { grid-template-columns: 1fr; } .fl-num { grid-auto-flow: column; justify-content: start; align-items: baseline; gap: 8px; } }
 .hex { width: 52px; height: 58px; clip-path: polygon(50% 0, 100% 25%, 100% 75%, 50% 100%, 0 75%, 0 25%); display: grid; place-items: center; font-family: var(--display); font-size: 24px; color: var(--bg); }
 .hex.sm { width: 30px; height: 34px; font-size: 15px; flex: none; }
 .hname { font-weight: 600; font-size: 14px; line-height: 1.1; }
@@ -181,6 +189,40 @@ function seatHtml(h, i, carry = false) {
     <div class="hname">${esc(he.name)}</div><div class="items">${(h.items ?? []).map((it) => `<span class="item">${esc(itemName(it))}</span>`).join('') || '<span class="item muted">—</span>'}</div></div>`;
 }
 const famChips = (fams) => Object.entries(fams).sort((a, b) => b[1] - a[1]).map(([f, k]) => `<span class="fam ${f}">${esc(FAM.get(f)?.name ?? f)} ${k}</span>`).join('');
+// ---------- game plan (whole runs on the game's engine) ----------
+const PACK_NAMES = { marche: 'du marché', famille: 'de famille', cible: 'ciblée', rare: 'rare' };
+// average count per run → words
+const times = (x) => (x < 0.15 ? null : x < 0.45 ? 'parfois' : x < 0.8 ? '1 fois sur 2' : `${Math.round(x)}×`);
+function gameplanHtml(c) {
+  const g = c.gameplan;
+  if (!g) return '';
+  const others = Object.entries(g.plans).filter(([k]) => k !== g.plan).sort((a, b) => b[1] - a[1]).map(([k, v]) => `${esc((M.planLabels?.[k] ?? k).split(' :')[0])} ${pct(v)}`).join(', ');
+  const picks = (M.firstPicks ?? []).slice(0, 6).map((x) => esc(hero(x.id).name)).join(', ');
+  const floors = g.floors.map((f, k) => {
+    const packs = Object.entries(f.packs).sort((a, b) => b[1] - a[1]).map(([p, x]) => {
+      const t = times(x);
+      if (!t) return null;
+      const fam = (p === 'cible' || p === 'famille') ? Object.entries(f.traits ?? {}).sort((a, b) => b[1] - a[1])[0]?.[0] : null;
+      return `${t} ${PACK_NAMES[p] ?? p}${fam && p === 'cible' ? ` (${esc(FAM.get(fam)?.name ?? fam)})` : ''}`;
+    }).filter(Boolean);
+    const key = f.targetOwned.filter((h) => h.seated >= 0.25).sort((a, b) => b.seated - a.seated)
+      .map((h) => `<span class="hchip">${hexOf(h.id, true)}${esc(hero(h.id).name)} <span class="muted">${pct(h.seated)} · ${h.star >= 1.8 ? '2★' : h.star >= 1.3 ? '1-2★' : '1★'}</span></span>`).join('');
+    const trans = f.transition.filter((h) => h.share >= 0.1).map((h) => esc(hero(h.id).name));
+    const xp = times(f.xp);
+    const tips = [
+      k === 0 ? `<li><b>Premier héros</b> (invocation offerte) : le plus fort seul à 1★, peu importe la compo : ${picks}.</li>` : '',
+      packs.length ? `<li><b>Invocations</b> : ${packs.join(', ')}.</li>` : '<li><b>Invocations</b> : aucune, l’essence se garde.</li>',
+      `<li><b>XP</b> : ${xp ? `${xp} (4 XP pour 5 or)` : 'rien'} · <b>or gardé</b> ≈ ${nf.format(f.gold ?? 0)} (soit ${Math.floor((f.gold ?? 0) / 5)} essence d’intérêts par salle gagnée)${times(f.items) ? ` · <b>objets du kit</b> à l’étal : ${times(f.items)}` : ''}.</li>`,
+      key ? `<li><b>Héros de la compo déjà assis</b> : ${key}</li>` : '<li><b>Héros de la compo</b> : pas encore, joue les plus forts disponibles.</li>',
+      trans.length ? `<li><b>Héros de transition</b> souvent assis : ${trans.join(', ')}.</li>` : '',
+    ].join('');
+    return `<li><div class="fl-num"><b>Étage ${f.floor}</b><span>survie ${pct(f.survival)}</span><span>niv. ${f.level ?? '–'} · ${f.seats ?? '–'} sièges</span></div><ul class="tips">${tips}</ul></li>`;
+  }).join('');
+  return `<details><summary>Déroulé de la partie, étage par étage</summary>
+    <p style="font-size:14px">Plan conseillé : <b>${esc(M.planLabels?.[g.plan] ?? g.plan)}</b>. Avec ce plan, le bot gagne <b>${pct(g.winRate)}</b> de ${g.runs} runs complètes au ${esc(M.settings.pact)}, jouées sur le moteur du jeu (boutique, invocations, XP, objets).${others ? ` <span class="muted">Autres plans : ${others}.</span>` : ''}</p>
+    <p class="muted" style="font-size:13px;margin-top:4px">Chiffres de fin d’étage, en médiane des runs arrivées jusque-là. Invocations : nombre moyen par run sur l’étage. Héros : part des runs où il est assis, et ses étoiles.</p>
+    <ol class="floors">${floors}</ol></details>`;
+}
 function compCard(c) {
   const F = M.settings.floors;
   const counters = [...c.bosses].sort((a, b) => a.ratio - b.ratio).slice(0, 3);
@@ -201,6 +243,7 @@ function compCard(c) {
       <div class="stat"><span class="k">Milieu de run</span><span class="v">${big(c.milieu.median)}</span></div>
       <div class="stat"><span class="k">Pire contre</span><span class="v bad">${esc(BO.get(counters[0]?.id)?.name ?? '–')} ${counters[0] ? pct(counters[0].ratio) : ''}</span></div>
     </div>
+    ${gameplanHtml(c)}
     <details><summary>Runes, bénédictions, contrebande et contres</summary><div class="cols">
       <div><h3 style="font-size:20px">Runes</h3>${c.runes ? `<ol style="margin:6px 0 0;padding-left:20px">${c.runes.build.map((r) => `<li>${esc(RU.get(r)?.name ?? r)}</li>`).join('')}</ol><p class="muted" style="font-size:13px">Ordre gauche → droite, sans rune secrète : ×${(1 + c.runes.buildGain).toLocaleString('fr-FR', { maximumFractionDigits: 1 })} sur la médiane.</p>` : '<p class="muted">Voir l’onglet Runes.</p>'}</div>
       <div><h3 style="font-size:20px">Bénédictions</h3>${c.blessings ? `<ul class="tips">${c.blessings.slice(0, 4).map((b) => `<li><b>${esc(BL.get(b.id)?.name ?? b.id)}</b> ${sgn(b.gain)}</li>`).join('')}</ul>` : '<p class="muted">–</p>'}</div>
@@ -290,6 +333,7 @@ function strategy() {
   <ol class="steps">
     <li><div><h3>Départ · étages 1 et 2</h3><ul class="tips" style="margin-top:8px">
       <li>Tu commences avec <b>${e.startGold} or</b> et <b>${e.startEssence ?? 3} essence</b>, soit de quoi faire une invocation. <b>Une salle perdue termine la run</b> : les boss font ${nf.format(bossHp(1) ?? 0)} puis ${nf.format(bossHp(2) ?? 0)} PV.</li>
+      ${M.firstPicks ? `<li><b>Premier héros</b> (invocation offerte) : garde le plus fort seul à 1★ : ${M.firstPicks.slice(0, 6).map((x) => `<b>${esc(hero(x.id).name)}</b>`).join(', ')}. Un seul siège au départ : c’est lui qui doit gagner les trois premières salles.</li>` : ''}
       <li><b>Remplis les sièges</b> avant d’acheter de l’XP (${e.xpCost} or pour ${e.xpGain} XP).</li>
       <li>Joue <b>blackjack classique</b> : reste à 17, double 10-11 contre 2 à 9, défausse une carte basse sur 12-16.</li>
       ${op.length ? `<li>Débuts les plus solides, héros de coût 1-2 sans objet, 3 sièges : ${op.map((o) => `<b>${esc(FAM.get(o.family)?.name ?? o.family)}</b> (${o.heroes.map((h) => esc(hero(h).name)).join(', ')}) : boss de l’étage 3 battu ${pct(o.kill[3] ?? 0)}`).join(' ; ')}.</li>` : ''}

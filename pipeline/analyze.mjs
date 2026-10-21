@@ -4,6 +4,7 @@ import fs from 'node:fs';
 import { BancPool } from './pool.mjs';
 import { makeBanc, loadWorkerSource } from './banc.mjs';
 import { carryOf } from './carry.mjs';
+import { addGameplans } from './gameplan.mjs';
 import { MOMENTS, heroCounter, makeSetup } from './setup.mjs';
 
 const SCALE = +(process.env.SCALE ?? 0.5);
@@ -291,6 +292,11 @@ export async function analyze({ version, workerPath, previous = null, out = 'dat
     bosses: D.bosses.map((b) => ({ id: b.id, name: b.name, vice: b.vice, desc: b.desc, rules: b.rules, strong: b.strong, weak: b.weak, level: b.level })),
     comps, pivot, openers,
   };
+  // ---------- G. game plans: whole runs on the game's run engine ----------
+  try { await addGameplans(meta, workerPath, { runs: Math.max(100, Math.round(600 * SCALE)), log }); }
+  catch (e) { log('G. déroulé de partie impossible :', e.message); }
+  log('G. déroulé de partie', `${((Date.now() - t0) / 60000).toFixed(1)} min`);
+  meta.minutes = (Date.now() - t0) / 60000;
   fs.mkdirSync('data', { recursive: true });
   fs.writeFileSync(out, JSON.stringify(meta));
   log(`terminé en ${meta.minutes.toFixed(1)} min, ${meta.roomsSimulated.toLocaleString('fr-FR')} salles`);

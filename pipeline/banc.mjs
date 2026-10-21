@@ -16,6 +16,9 @@ const CONSTANTS = {
   progressionCursed: /([A-Za-z_$][\w$]*)=\{seats:\[1,/,
   traits: /([A-Za-z_$][\w$]*)=\{noblesse:\{id:`noblesse`/,
   pacts: /([A-Za-z_$][\w$]*)=\[\{level:0,name:`/,
+  // full-run engine: the run class the banc instantiates, and its bot that plays one deal
+  Run: /new ([A-Za-z_$][\w$]*)\([\w$]+\.seed\?\?\d+,0,[\w$]+\.curse\?\?1/,
+  playDeal: /=([A-Za-z_$][\w$]*)\([\w$]+,[\w$]+\);[\w$]+\.onDeal\?\./,
 };
 
 /** Finds the data variable names in the worker source. Throws with a clear message if a pattern broke. */

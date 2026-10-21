@@ -15,7 +15,9 @@ Les chiffres viennent du **simulateur officiel du banc d’essai** du jeu (`play
    - une recherche génétique puis une recherche locale des compos, et la même recherche sans le héros pivot de la meilleure compo ;
    - l’évaluation finale : médiane, P10-P90, boss battu par étage, milieu et fin de run, les 24 boss ;
    - les améliorations par le Contrebandier, les runes (build de 6 sans rune secrète) et les bénédictions ;
-   - les débuts de partie (héros de coût 1-2 sans objet).
+   - les débuts de partie (héros de coût 1-2 sans objet) ;
+   - le carry de chaque compo (le héros dont les objets comptent le plus) ;
+   - le déroulé de partie de chaque compo : des runs complètes jouées sur le moteur du jeu (`pipeline/runbot.mjs`, `pipeline/gameplan.mjs`) avec plusieurs plans (or gardé, XP, invocations), dont le meilleur est résumé étage par étage.
 4. `pipeline/api.mjs` lit les statistiques des vraies parties sur l’API du jeu, si une clé est disponible.
 5. `pipeline/update.mjs` enchaîne tout si la version a changé, puis écrit `data/meta.json` et `app/data.json`.
 
