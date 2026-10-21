@@ -19,6 +19,8 @@ const CONSTANTS = {
   // full-run engine: the run class the banc instantiates, and its bot that plays one deal
   Run: /new ([A-Za-z_$][\w$]*)\([\w$]+\.seed\?\?\d+,0,[\w$]+\.curse\?\?1/,
   playDeal: /=([A-Za-z_$][\w$]*)\([\w$]+,[\w$]+\);[\w$]+\.onDeal\?\./,
+  // the banc's room loop: (setup, tables, hp?, { seed, onDeal(deal) })
+  simulate: /function ([A-Za-z_$][\w$]*)\(e,t,n,r=\{\}\)\{let i=new [\w$]+\(r\.seed/,
 };
 
 /** Finds the data variable names in the worker source. Throws with a clear message if a pattern broke. */
@@ -58,6 +60,11 @@ export function makeBanc(src, filename = 'sim.worker.js') {
       if (!last) throw new Error('banc: pas de réponse');
       if (last.erreur) throw new Error(last.erreur);
       return last;
+    },
+    /** calls onDeal(deal) for every deal of `tables` rooms; deal.seats[i] = { outcome, base, mult, damage, steps } */
+    deals(setup, tables, onDeal, seed) {
+      if (!self.__data.simulate) throw new Error('banc: boucle de simulation introuvable');
+      return self.__data.simulate(setup, tables, undefined, { onDeal, ...(seed ? { seed } : {}) });
     },
   };
 }

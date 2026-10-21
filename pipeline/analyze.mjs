@@ -3,7 +3,7 @@
 import fs from 'node:fs';
 import { BancPool } from './pool.mjs';
 import { makeBanc, loadWorkerSource } from './banc.mjs';
-import { carryOf } from './carry.mjs';
+import { carryOf, damageShares } from './carry.mjs';
 import { addGameplans } from './gameplan.mjs';
 import { MOMENTS, heroCounter, makeSetup } from './setup.mjs';
 
@@ -202,8 +202,8 @@ export async function analyze({ version, workerPath, previous = null, out = 'dat
     c.growthDependent = c.milieu.median < 0.7 * c.fin.median;
     c.cheap = c.heroes.every((h) => HERO.get(h.id).cost <= 3);
   }
-  // carry: the hero whose items matter most
-  await Promise.all(comps.map(async (c) => Object.assign(c, await carryOf(c, (heroes) => med({ heroes }, n(3000))))));
+  // carry: the hero who deals the damage (and the key piece whose items matter most)
+  await Promise.all(comps.map(async (c) => Object.assign(c, await carryOf(c, (heroes) => med({ heroes }, n(3000)), damageShares(banc0, setup(lean(c)), n(3000))))));
   log('C. évaluation', `${((Date.now() - t0) / 60000).toFixed(1)} min`);
 
   // ---------- D. contraband upgrades per comp ----------
