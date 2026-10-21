@@ -44,17 +44,16 @@ Le site est statique : `npm run site` construit `public/` (page complète et `da
 
 1. Sur [vercel.com/new](https://vercel.com/new), importe le dépôt `alexis-da/runejack-meta`.
 2. Laisse les réglages proposés : ils viennent de `vercel.json` (pas de framework, commande `node pipeline/build-site.mjs`, dossier `public`). Clique **Deploy**.
-3. Chaque push sur `main` redéploie le site, y compris ceux de la tâche planifiée : le site suit donc les patchs tout seul.
+3. Chaque push sur `main` redéploie le site, y compris ceux du workflow de mise à jour : le site suit donc les patchs tout seul.
 
 ## Statistiques des vraies parties (facultatif)
 
 1. Crée une clé sur `play.runejack.com/admin`, onglet **Clés API**.
-2. Donne-la à la mise à jour sans jamais l’écrire dans le dépôt :
-   - soit comme secret réseau de l’environnement cloud (en-tête `Authorization: Bearer <clé>` pour `play.runejack.com`) ;
-   - soit comme variable d’environnement `RUNEJACK_API_KEY`.
+2. Ajoute-la au dépôt GitHub sans jamais l’écrire dans le code : **Settings → Secrets and variables → Actions → New repository secret**, nom `RUNEJACK_API_KEY`.
+3. En local, passe-la en variable d’environnement `RUNEJACK_API_KEY`.
 
-Sans clé, l’onglet « Vraies parties » reste vide et tout le reste fonctionne. Avec une clé, ces statistiques sont rafraîchies à chaque passage de la tâche planifiée, même sans nouveau patch.
+Sans clé, l’onglet « Vraies parties » garde les dernières statistiques connues, et tout le reste fonctionne.
 
 ## Mise à jour automatique
 
-Une tâche planifiée Claude Code tourne toutes les 6 heures. Ses consignes sont dans [`ROUTINE.md`](ROUTINE.md).
+Un workflow GitHub Actions tourne toutes les 6 heures. Il analyse chaque nouvelle version du jeu, rafraîchit les statistiques et pousse les données, puis Vercel redéploie le site. Une tâche planifiée Claude republie ensuite l’app Claude. Les détails sont dans [`ROUTINE.md`](ROUTINE.md).

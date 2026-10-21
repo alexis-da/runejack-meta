@@ -29,9 +29,12 @@ if (!statsOnly && (force || !prev || prev.version !== game.version)) {
 } else if (!statsOnly) {
   console.log('déjà à jour');
 }
-const stats = await fetchStats();
+let stats = await fetchStats();
+const fresh = stats.ok;
 console.log(stats.ok ? 'statistiques des vraies parties : ok' : 'statistiques des vraies parties : indisponibles (clé API absente ou refusée)');
+// keep the last good stats when the API is unreachable
+if (!stats.ok && fs.existsSync('app/data.json')) stats = JSON.parse(fs.readFileSync('app/data.json', 'utf8')).stats ?? stats;
 fs.mkdirSync('app', { recursive: true });
 fs.writeFileSync('app/data.json', JSON.stringify({ meta, stats }));
 const analysed = meta !== prev || force;
-process.exit(analysed && !statsOnly ? 0 : stats.ok ? 11 : 10);
+process.exit(analysed && !statsOnly ? 0 : fresh ? 11 : 10);

@@ -1,0 +1,53 @@
+# Every 6 hours: checks the game version, runs the full analysis when it changed, refreshes the real-game
+# stats, then commits data/meta.json and app/data.json. Vercel redeploys the site on each push.
+# Exit codes of pipeline/update.mjs: 0 = new version analysed, 11 = stats refreshed, 10 = nothing new.
+name: Mise à jour de la méta
+
+on:
+  schedule:
+    - cron: '17 */6 * * *'
+  workflow_dispatch:
+    inputs:
+      force:
+        description: Relancer l’analyse complète même sans nouvelle version
+        type: boolean
+        default: false
+
+permissions:
+  contents: write
+
+concurrency:
+  group: update
+  cancel-in-progress: false
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    timeout-minutes: 150
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: npm test
+      - name: Vérifier la version et analyser
+        id: update
+        env:
+          RUNEJACK_API_KEY: ${{ secrets.RUNEJACK_API_KEY }}
+        run: |
+          set +e
+          node pipeline/update.mjs ${{ inputs.force && '--force' || '' }}
+          code=$?
+          echo "code=$code" >> "$GITHUB_OUTPUT"
+          if [ "$code" != 0 ] && [ "$code" != 10 ] && [ "$code" != 11 ]; then exit "$code"; fi
+      - name: Enregistrer
+        if: steps.update.outputs.code == '0' || steps.update.outputs.code == '11'
+        run: |
+          version=$(node -p "require('./data/meta.json').version")
+          if [ "${{ steps.update.outputs.code }}" = 0 ]; then msg="Méta $version"; else msg="Stats des vraies parties $(date -u +%F\ %H:%M)"; fi
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add data/meta.json app/data.json
+          git diff --cached --quiet && exit 0
+          git commit -m "$msg"
+          git push

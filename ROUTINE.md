@@ -1,22 +1,29 @@
-# Mise à jour automatique (tâche planifiée)
+# Mise à jour automatique
 
-Consignes suivies par la tâche planifiée Claude Code, qui se déclenche toutes les 6 heures dans une session cloud neuve.
+## GitHub Actions : les données et le site
 
-1. **Rattacher et cloner le dépôt** : `alexis-da/runejack-meta`, accès en écriture, dans `/home/user/runejack-meta`.
-2. **Vérifier et analyser** : depuis ce dossier, lancer `npm run update`.
-   - Code de sortie **0** : une nouvelle version a été analysée (environ 45 minutes, les données sont dans `data/meta.json` et `app/data.json`).
-   - Code de sortie **11** : même version, mais les statistiques des vraies parties ont été rafraîchies dans `app/data.json`. Faire les étapes 3 et 4 (message de commit `Stats des vraies parties <date>`).
-   - Code de sortie **10** : rien de neuf (même version, API indisponible). Terminer en une ligne.
-   - Autre code : l’analyse a échoué. Ne rien publier, ne rien pousser, et résumer l’erreur. En général, un motif de `pipeline/banc.mjs` ne trouve plus une table du jeu.
-3. **Enregistrer** (codes 0 et 11) :
-   - commit de `data/meta.json` et `app/data.json` sur `main`, message `Méta <version>` (code 0) ;
-   - push avec `git push -u origin main`.
-4. **Publier l’app** (codes 0 et 11) avec l’outil Artifact :
-   - `url` = `https://claude.ai/artifact/LS6A1aBxFyEwKRiF56aR8M` ;
-   - `file_path` = `app/index.html` ;
-   - `files` = `{"data.json": "app/data.json"}` ;
-   - `label` = `Méta <version>` ;
-   - lire d’abord l’artifact (`action: "read"`) si l’outil le demande.
-5. **Résumer en quelques lignes** : la version, la meilleure compo (nom, médiane par salle, boss final battu) et ce qui a changé depuis la version précédente (champ `changes` de `data/meta.json`).
+Le workflow [`.github/workflows/update.yml`](.github/workflows/update.yml) tourne toutes les 6 heures sur GitHub :
 
-Ne jamais modifier le code de `pipeline/` ou de `app/` pendant une mise à jour automatique.
+1. `npm test`, puis `node pipeline/update.mjs` :
+   - code **0** : une nouvelle version du jeu a été analysée (environ 45 minutes) ;
+   - code **11** : même version, mais les statistiques des vraies parties ont été rafraîchies ;
+   - code **10** : rien de neuf ;
+   - autre code : l’analyse a échoué, le workflow s’arrête en erreur et GitHub envoie un e-mail. En général, un motif de `pipeline/banc.mjs` ne trouve plus une table du jeu.
+2. Pour les codes 0 et 11, commit de `data/meta.json` et `app/data.json` sur `main` (`Méta <version>` ou `Stats des vraies parties <date>`).
+3. Vercel voit le push et redéploie le site.
+
+La clé de l’API du jeu est le secret `RUNEJACK_API_KEY` du dépôt (Settings → Secrets and variables → Actions). Sans elle, l’analyse marche quand même, et les dernières statistiques des vraies parties sont gardées.
+
+Lancer à la main : onglet **Actions** du dépôt → « Mise à jour de la méta » → **Run workflow**. Cocher la case pour forcer une analyse complète.
+
+## Tâche planifiée Claude : l’app Claude
+
+Une tâche planifiée Claude Code republie l’app Claude quand les données du dépôt ont changé. Elle ne calcule rien et ne pousse rien.
+
+1. Cloner `https://github.com/alexis-da/runejack-meta` dans `/home/user/runejack-meta` (lecture seule suffit).
+2. Lire `data.json` publié : outil Artifact, `action: "read"`, `url` = `https://claude.ai/artifact/LS6A1aBxFyEwKRiF56aR8M`, `path` = `data.json`.
+3. Si `meta.generatedAt` et `stats.fetchedAt` sont les mêmes que dans `app/data.json` du dépôt, terminer en une ligne : « déjà à jour ».
+4. Sinon, republier avec l’outil Artifact : même `url`, `file_path` = `app/index.html`, `files` = `{"data.json": "app/data.json"}`, `label` = `Méta <version>`.
+5. Résumer en 2 ou 3 lignes : la version, la meilleure compo et son carry.
+
+Ne jamais modifier le dépôt pendant ce passage.
