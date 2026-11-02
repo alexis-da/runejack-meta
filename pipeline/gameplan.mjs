@@ -13,6 +13,7 @@ export const PLAN_LABELS = {
   tempo: 'Tempo : monter de niveau dès que possible',
   depart: 'Départ à fond : tout dépenser à l’étage 1, puis garder 20 or',
   relance: 'Équilibré avec relances de la boutique',
+  niveau: 'Niveau d’abord : monter au niveau 6 avant d’invoquer, garder 10 or',
 };
 const CURSE = 1;
 

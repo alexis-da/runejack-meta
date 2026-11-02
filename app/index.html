@@ -194,6 +194,20 @@ function seatHtml(h, i, role = null) {
     <div class="hname">${esc(he.name)}</div>${h.damageShare != null ? `<span class="dmg">${pct(h.damageShare)} des dégâts</span>` : ''}<div class="items">${(h.items ?? []).map((it) => `<span class="item">${esc(itemName(it))}</span>`).join('') || '<span class="item muted">—</span>'}</div></div>`;
 }
 const famChips = (fams) => Object.entries(fams).sort((a, b) => b[1] - a[1]).map(([f, k]) => `<span class="fam ${f}">${esc(FAM.get(f)?.name ?? f)} ${k}</span>`).join('');
+// interest per room won: essence by steps of 5 gold up to 1.x, gold by tiers since 3.0
+const interestOf = (g) => {
+  const e = M.economy ?? {};
+  if (!e.interestTiers) return { n: Math.floor(g / (e.interestStep ?? 5)), unit: 'essence' };
+  let n = 0, prev = 0;
+  for (const { upTo, step } of e.interestTiers) { const span = Math.min(g, upTo ?? Infinity) - prev; if (span <= 0) break; n += Math.floor(span / step); prev = upTo; }
+  return { n, unit: 'or' };
+};
+const interestRule = () => {
+  const e = M.economy ?? {};
+  if (!e.interestTiers) return `chaque tranche de ${e.interestStep ?? 5} or gardés rapporte 1 essence d’intérêts par salle gagnée`;
+  let prev = 0;
+  return 'intérêts en or par salle gagnée : ' + e.interestTiers.map(({ upTo, step }) => { const t = upTo == null || upTo === Infinity ? `1 par tranche de ${step} au-delà de ${prev}` : `1 par tranche de ${step} jusqu’à ${upTo}`; prev = upTo; return t; }).join(', ');
+};
 // ---------- game plan (whole runs on the game's engine) ----------
 const PACK_NAMES = { marche: 'du marché', famille: 'de famille', cible: 'ciblée', rare: 'rare' };
 // average count per run → words
@@ -216,8 +230,8 @@ function gameplanHtml(c) {
     const xp = times(f.xp);
     const tips = [
       k === 0 ? `<li><b>Premier héros</b> (invocation offerte) : le plus fort seul à 1★, peu importe la compo : ${picks}.</li>` : '',
-      packs.length ? `<li><b>Invocations</b> : ${packs.join(', ')}.</li>` : '<li><b>Invocations</b> : aucune, l’essence se garde.</li>',
-      `<li><b>XP</b> : ${xp ? `${xp} (4 XP pour 5 or)` : 'rien'} · <b>or gardé</b> ≈ ${nf.format(f.gold ?? 0)} (soit ${Math.floor((f.gold ?? 0) / 5)} essence d’intérêts par salle gagnée)${times(f.items) ? ` · <b>objets du kit</b> à l’étal : ${times(f.items)}` : ''}.</li>`,
+      packs.length ? `<li><b>Invocations</b> : ${packs.join(', ')}.</li>` : '<li><b>Invocations</b> : aucune.</li>',
+      `<li><b>XP</b> : ${xp ? `${xp} (4 XP pour 5 or)` : 'rien'} · <b>or gardé</b> ≈ ${nf.format(f.gold ?? 0)} (soit ${interestOf(f.gold ?? 0).n} ${interestOf(f.gold ?? 0).unit} d’intérêts par salle gagnée)${times(f.items) ? ` · <b>objets du kit</b> à l’étal : ${times(f.items)}` : ''}.</li>`,
       key ? `<li><b>Héros de la compo déjà assis</b> : ${key}</li>` : '<li><b>Héros de la compo</b> : pas encore, joue les plus forts disponibles.</li>',
       trans.length ? `<li><b>Héros de transition</b> souvent assis : ${trans.join(', ')}.</li>` : '',
     ].join('');
@@ -341,12 +355,12 @@ function strategy() {
   return `<p class="muted">Le déroulé d’une run au ${esc(M.settings.pact)}, étage par étage, construit à partir des mesures de cette version. PV des boss : ${hp.slice(0, F + 1).map((x) => `${x.etage} : ${nf.format(x.boss)}`).join(' · ')}.</p>
   <ol class="steps">
     <li><div><h3>Départ · étages 1 et 2</h3><ul class="tips" style="margin-top:8px">
-      <li>Tu commences avec <b>${e.startGold} or</b> et <b>${e.startEssence ?? 3} essence</b>, soit de quoi faire une invocation. <b>Une salle perdue termine la run</b> : les boss font ${nf.format(bossHp(1) ?? 0)} puis ${nf.format(bossHp(2) ?? 0)} PV.</li>
+      <li>Tu commences avec <b>${e.startGold} or</b>${e.startEssence != null ? ` et <b>${e.startEssence} essence</b>` : ''}, et une invocation offerte. <b>Une salle perdue termine la run</b> : les boss font ${nf.format(bossHp(1) ?? 0)} puis ${nf.format(bossHp(2) ?? 0)} PV.</li>
       ${M.firstPicks ? `<li><b>Premier héros</b> (invocation offerte) : garde le plus fort seul à 1★ : ${M.firstPicks.slice(0, 6).map((x) => `<b>${esc(hero(x.id).name)}</b>`).join(', ')}. Un seul siège au départ : c’est lui qui doit gagner les trois premières salles.</li>` : ''}
       <li><b>Remplis les sièges</b> avant d’acheter de l’XP (${e.xpCost} or pour ${e.xpGain} XP).</li>
       <li>Joue <b>blackjack classique</b> : reste à 17, double 10-11 contre 2 à 9, défausse une carte basse sur 12-16.</li>
       ${op.length ? `<li>Débuts les plus solides, héros de coût 1-2 sans objet, 3 sièges : ${op.map((o) => `<b>${esc(FAM.get(o.family)?.name ?? o.family)}</b> (${o.heroes.map((h) => esc(hero(h).name)).join(', ')}) : boss de l’étage 3 battu ${pct(o.kill[3] ?? 0)}`).join(' ; ')}.</li>` : ''}
-      <li>Garde l’or par tranches de ${e.interestStep} : chaque tranche rapporte 1 essence d’intérêts par salle gagnée.</li>
+      <li>Garde de l’or : ${interestRule()}.</li>
     </ul></div></li>
     <li><div><h3>Construire · étages 3 à 5</h3><ul class="tips" style="margin-top:8px">
       <li>Vise un palier 4 de famille (4 héros) : ${early.length ? early.map((c) => `<b>${esc(c.name)}</b> (${big(c.milieu.median)} par salle en milieu de run)`).join(', ') : 'un Banco de la tier list'}.</li>

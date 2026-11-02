@@ -15,6 +15,8 @@ export const PLANS = {
   tempo: { reserve: 0, reserveFrom: 0, minValue: 0.03, threeStarMaxCost: 1, reroll: false },
   // floor 1 all-in (XP and invocations), then keep 20 gold
   depart: { reserve: 20, reserveFrom: 3, minValue: 0.03, threeStarMaxCost: 1, reroll: false },
+  // gold economy (3.0+): level up to 6 before invocations, keep 10 gold
+  niveau: { reserve: 10, reserveFrom: 3, minValue: 0.03, threeStarMaxCost: 1, reroll: false, xpFirst: 6 },
   // keep 20 gold, reroll the shop for better invocations
   relance: { reserve: 20, reserveFrom: 0, minValue: 0.03, threeStarMaxCost: 1, reroll: true },
 };
@@ -161,8 +163,11 @@ export function makeRunBot(ctx, target, params = PLANS.equilibre) {
       const k = pool.filter((x) => x.cost === h.cost).length;
       v += Math.min(1, (3 * (odds[h.cost - 1] ?? 0)) / 100 / k) * (n.first ? 2 : 1);
     }
-    return v / run.offerPrice(o, trait).essence;
+    return v / priceOf(run, o, trait);
   };
+  // invocations cost essence up to 1.x, gold since 3.0
+  const priceOf = (run, o, trait) => { const p = run.offerPrice(o, trait); return typeof p === 'number' ? p : p.essence ?? p.gold ?? 0; };
+  const paidInGold = (run, o) => typeof run.offerPrice(o) === 'number';
   const bestTrait = (run) => {
     const traits = Object.keys(famWeight);
     return traits.map((t) => ({ t, v: offerValue(run, { pack: 'cible' }, t) })).sort((a, b) => b.v - a.v)[0]?.t;
@@ -180,9 +185,13 @@ export function makeRunBot(ctx, target, params = PLANS.equilibre) {
       takePack(run);
       const empty = run.board.includes(null) && run.bench.every((c) => c === null);
       const fam = bestTrait(run);
-      // 1. invocations (essence): the most useful cards per essence, or anything to fill an empty seat
+      // 0. levels first when the plan says so (gold economy: XP and invocations share the same gold)
+      if (params.xpFirst && !empty && run.canBuyXp() && run.gold - 5 >= reserve && run.level < params.xpFirst) { run.buyXp(); fl.xp++; continue; }
+      // 1. invocations: the most useful cards per coin, or anything to fill an empty seat; when paid in
+      // gold, the interest reserve is kept unless a seat is empty
       const offers = run.shop.map((o, i) => ({ o, i, t: o.pack === 'cible' ? fam : o.trait }))
         .filter(({ o, i, t }) => !o.sold && !run.buyBlocker(i, o.pack === 'cible' ? t : undefined))
+        .filter(({ o, t }) => empty || !paidInGold(run, o) || run.gold - priceOf(run, o, t) >= reserve)
         .map((x) => ({ ...x, v: offerValue(run, x.o, x.t) + (empty ? (x.o.pack === 'marche' ? 1 : 0.5) : 0) }))
         .sort((a, b) => b.v - a.v);
       const best = offers[0];
@@ -196,7 +205,7 @@ export function makeRunBot(ctx, target, params = PLANS.equilibre) {
       // 2. XP (gold), keeping the interest reserve
       if (run.canBuyXp() && run.gold - 5 >= reserve) { run.buyXp(); fl.xp++; continue; }
       // 3. reroll the shop for better offers when rich in both gold and essence
-      if (params.reroll && needs(run).length && run.canReroll() && run.gold - run.rerollCost() >= reserve && run.essence >= 5) { run.reroll(); fl.rerolls++; continue; }
+      if (params.reroll && needs(run).length && run.canReroll() && run.gold - run.rerollCost() >= reserve && (run.essence === undefined || run.essence >= 5)) { run.reroll(); fl.rerolls++; continue; }
       break;
     }
     // sell bench heroes that will never be seated (essence), keep target heroes and merge material
@@ -209,7 +218,7 @@ export function makeRunBot(ctx, target, params = PLANS.equilibre) {
     }
     arrange(run);
     gear(run, fl);
-    fl.level = run.level; fl.gold = run.gold; fl.essence = run.essence;
+    fl.level = run.level; fl.gold = run.gold; fl.essence = run.essence ?? null;
     fl.board = run.board.map((c) => (c ? { id: c.defId, star: c.star, items: [...(c.items ?? [])] } : null));
   }
 
