@@ -196,9 +196,11 @@ export async function analyze({ version, workerPath, previous = null, out = 'dat
   comps.sort((a, b) => b.fin.median - a.fin.median);
   // dedupe identical cores
   comps = comps.filter((c, i) => comps.findIndex((d) => d.heroes.map((h) => h.id).sort().join() === c.heroes.map((h) => h.id).sort().join()) === i);
-  const tierOf = (t) => (t >= FLOORS + 2 ? 'S' : t >= FLOORS + 1.3 ? 'A' : t >= FLOORS + 0.7 ? 'B' : t >= FLOORS + 0.2 ? 'C' : 'D');
+  // the banc stops at 14 floors, so when easy HP let many comps reach it, S also needs half the top damage
+  const top = Math.max(...comps.map((c) => c.fin.median));
+  const tierOf = (t, m) => (t >= FLOORS + 2 ? (m >= 0.5 * top ? 'S' : 'A') : t >= FLOORS + 1.3 ? 'A' : t >= FLOORS + 0.7 ? 'B' : t >= FLOORS + 0.2 ? 'C' : 'D');
   for (const c of comps) {
-    c.tier = tierOf(c.fin.tenu);
+    c.tier = tierOf(c.fin.tenu, c.fin.median);
     c.growthDependent = c.milieu.median < 0.7 * c.fin.median;
     c.cheap = c.heroes.every((h) => HERO.get(h.id).cost <= 3);
   }

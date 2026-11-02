@@ -282,7 +282,7 @@ const VIEWS = {
   compos: () => {
     const best = M.comps[0];
     return `<div class="bar"><div class="seg" id="cf">${[['all', 'Toutes'], ['early', 'Tôt'], ['mid', 'Milieu'], ['late', 'Fin'], ['banco', 'Banco']].map(([k, l]) => `<button data-f="${k}" aria-pressed="${compFilter === k}">${l}</button>`).join('')}</div>
-      <span class="muted" style="font-size:13px">Tier selon l’étage dont le boss tombe avec la médiane des dégâts (S : deux étages au-delà du final). Pastilles : nombre de héros par famille, emblèmes non compris. Carry : le héros qui inflige le plus de dégâts (mesuré siège par siège, Banco partagé selon force et fureur) ; « réparti » quand trois héros ou plus font autant. Pièce clé : peu de dégâts, mais ses objets portent la compo (familles, bonus aux autres sièges).</span></div>
+      <span class="muted" style="font-size:13px">Tier selon l’étage dont le boss tombe avec la médiane des dégâts (S : deux étages au-delà du final et au moins la moitié des dégâts de la meilleure compo). Pastilles : nombre de héros par famille, emblèmes non compris. Carry : le héros qui inflige le plus de dégâts (mesuré siège par siège, Banco partagé selon force et fureur) ; « réparti » quand trois héros ou plus font autant. Pièce clé : peu de dégâts, mais ses objets portent la compo (familles, bonus aux autres sièges).</span></div>
       <div id="clist" style="display:grid;gap:14px"></div>`;
   },
   strategie: () => strategy(),
