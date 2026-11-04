@@ -117,9 +117,41 @@ dialog::backdrop { background: rgb(0 0 0 / .6); }
 .empty { padding: 18px; border: 1px dashed var(--line); border-radius: 12px; color: var(--muted); }
 footer { margin-top: 36px; padding-top: 14px; border-top: 1px solid var(--line); color: var(--muted); font-size: 13px; display: grid; gap: 4px; }
 pre.notes { white-space: pre-wrap; font-family: var(--body); font-size: 14px; margin: 0; max-height: 420px; overflow: auto; }
+/* pictures from the game (pixel art) */
+img.px { image-rendering: pixelated; display: block; }
+ul.tips img.px, .who img.px { display: inline-block; vertical-align: middle; }
+.tile { flex: none; width: 56px; height: 56px; border-radius: 8px; border: 2px solid var(--line-2); background: var(--bg); overflow: hidden; display: flex; align-items: center; justify-content: center; }
+.tile img { width: 100%; height: 100%; }
+.tile.sm { width: 44px; height: 44px; border-radius: 7px; }
+.tile.xs { width: 28px; height: 28px; border-radius: 5px; }
+.tile.r1 { border-color: #9aa1ad; } .tile.r2 { border-color: #7dd3a0; } .tile.r3 { border-color: #5aa9e6; } .tile.r4 { border-color: #b58cf0; } .tile.r5 { border-color: #f2c14e; }
+.tile.carry { box-shadow: 0 0 0 2px var(--felt), 0 0 0 4px var(--gold); }
+.tile.key { box-shadow: 0 0 0 2px var(--felt), 0 0 0 4px var(--keyc); }
+.tile .ini { font-weight: 700; font-size: 13px; color: var(--muted); }
+.icon { width: 18px; height: 18px; border-radius: 3px; background: var(--felt-2); }
+.icon.md { width: 24px; height: 24px; border-radius: 4px; }
+.icon.lg { width: 32px; height: 32px; border-radius: 6px; padding: 2px; }
+.unit { display: flex; flex-direction: column; align-items: center; gap: 3px; width: 62px; }
+.unit .st { color: var(--gold); font-size: 11px; letter-spacing: 1px; line-height: 1; min-height: 11px; }
+.unit .its { display: flex; gap: 1px; min-height: 18px; }
+.unit .n { font-size: 11.5px; color: var(--soft); text-align: center; line-height: 1.2; }
+.ctabs { display: flex; gap: 2px; overflow-x: auto; border-bottom: 1px solid var(--line); margin: -18px -16px 0; padding: 0 16px; background: var(--deep); }
+.ctabs button { font: inherit; font-size: 14px; padding: 10px 14px; background: none; border: 0; border-bottom: 2px solid transparent; color: var(--muted); cursor: pointer; white-space: nowrap; }
+.ctabs button[aria-selected="true"] { color: var(--text); font-weight: 600; border-bottom-color: var(--gold); }
+.cpanel[hidden] { display: none; }
+.brow { display: flex; align-items: center; gap: 16px; padding: 8px 12px; border-radius: 10px; background: var(--felt); }
+.brow .lbl { width: 92px; flex: none; font-size: 13px; font-weight: 600; padding: 6px 10px; border-radius: 8px; background: var(--felt-2); text-align: center; }
+.brow .us { display: flex; gap: 8px; flex: 1; flex-wrap: wrap; }
+.brow .res { display: flex; flex-direction: column; align-items: flex-end; text-align: right; }
+.brow .res b { font-family: var(--mono); font-size: 16px; }
+.brow .res span { font-size: 12px; color: var(--muted); }
+.itrow { display: flex; align-items: center; gap: 6px; font-size: 12.5px; }
+.rlist { display: flex; flex-wrap: wrap; gap: 8px; }
+.rchip { display: flex; align-items: center; gap: 8px; padding: 6px 12px 6px 8px; border-radius: 10px; background: var(--felt); font-size: 13.5px; }
+.rchip .k { font-family: var(--mono); font-size: 12px; color: var(--muted); }
 /* tier list: one row per comp, unfolds into the detail */
 .clist { display: grid; gap: 8px; }
-.chead, .crow > summary { display: grid; grid-template-columns: 44px minmax(200px, 280px) minmax(0, 1fr) 96px 92px 34px; gap: 16px; align-items: center; }
+.chead, .crow > summary { display: grid; grid-template-columns: 44px minmax(190px, 250px) minmax(0, 1fr) 96px 84px 34px; gap: 16px; align-items: center; }
 .chead { padding: 0 16px; font-size: 12px; color: var(--muted); letter-spacing: .04em; text-transform: uppercase; }
 .crow { background: var(--felt); border: 1px solid var(--line); border-radius: 12px; overflow: hidden; }
 .crow[open] { border-color: var(--line-2); }
@@ -135,7 +167,7 @@ pre.notes { white-space: pre-wrap; font-family: var(--body); font-size: 14px; ma
 .cname small { font-size: 13px; color: var(--muted); }
 .cname small em { font-style: normal; color: var(--gold); }
 .cname .mob { display: none; }
-.team { display: flex; gap: 8px; }
+.team { display: flex; gap: 6px; }
 .av { display: flex; flex-direction: column; align-items: center; gap: 4px; width: 64px; }
 .dot { flex: none; width: 40px; height: 40px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; font-weight: 700; font-size: 14px; color: var(--bg); }
 .dot.sm { width: 24px; height: 24px; font-size: 10.5px; }
@@ -165,6 +197,8 @@ pre.notes { white-space: pre-wrap; font-family: var(--body); font-size: 14px; ma
   .chead { display: none; }
   .crow > summary { grid-template-columns: 40px minmax(0, 1fr) 34px; gap: 12px; }
   .crow > summary .team { grid-column: 1 / -1; order: 5; justify-content: space-between; }
+  .unit { width: 60px; } .tile { width: 48px; height: 48px; }
+  .brow { flex-wrap: wrap; justify-content: space-between; } .brow .us { order: 3; flex: 1 1 100%; justify-content: flex-start; gap: 4px; } .brow .us .unit { width: 54px; }
   .crow > summary .num { display: none; }
   .cname .mob { display: block; }
   .hgrid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
@@ -209,7 +243,13 @@ function realMaps() {
 const rate = (x) => (x == null ? '–' : `${Number(x).toLocaleString('fr-FR', { maximumFractionDigits: 1 })} %`);
 const realCell = (x) => (x ? `<span title="${x.runs} runs">${rate(x.tauxVictoire)}</span> <span class="muted" style="font-size:12px">(${x.runs})</span>` : '<span class="muted">–</span>');
 const itemName = (id) => IT.get(id)?.name ?? id;
-const hexOf = (id, sm) => { const h = hero(id); return `<span class="dot ${sm ? 'sm ' : ''}${h.families[0]}" aria-hidden="true">${esc(h.name.split(/[\s-]/).map((w) => w[0]).join('').slice(0, 2))}</span>`; };
+// pictures shipped with the site (img/<kind>/<id>.png); initials if one is missing
+const pic = (kind, id, cls = 'px', alt = '') => `<img class="${cls}" src="img/${kind}/${encodeURIComponent(id)}.png" alt="${esc(alt)}" loading="lazy" onerror="this.parentNode.textContent=this.alt.slice(0,2)">`;
+const rarity = (id) => `r${Math.min(5, Math.max(1, hero(id).cost ?? 1))}`;
+const tileOf = (id, size = '', role = '') => `<span class="tile ${size} ${rarity(id)} ${role ?? ''}" title="${esc(hero(id).name)}">${pic('heroes', id, 'px', hero(id).name)}</span>`;
+const hexOf = (id, sm) => tileOf(id, sm ? 'xs' : 'sm');
+const itemIcon = (id, cls = 'icon') => `<img class="px ${cls}" src="img/items/${encodeURIComponent(id)}.png" alt="${esc(itemName(id))}" title="${esc(itemName(id))}" loading="lazy" onerror="this.style.visibility='hidden'">`;
+const runeIcon = (id, cls = 'icon lg') => `<img class="px ${cls}" src="img/runes/${encodeURIComponent(id)}.png" alt="${esc(RU.get(id)?.name ?? id)}" title="${esc(RU.get(id)?.name ?? id)}" loading="lazy" onerror="this.style.visibility='hidden'">`;
 
 async function load() {
   try {
@@ -242,14 +282,13 @@ function show(tab) {
 }
 
 // ---------- shared renderers ----------
-const initials = (id) => hero(id).name.split(/[\s-]/).map((w) => w[0]).join('').slice(0, 2).toUpperCase();
-// one hero in the row (avatar) and in the detail (card with items)
-const avatarHtml = (h, role) => `<span class="av${role ? ` ${role}` : ''}"><span class="dot ${hero(h.id).families[0]}" aria-hidden="true">${esc(initials(h.id))}</span><span class="n">${esc(hero(h.id).name)}</span></span>`;
+// one hero in the row: stars, portrait framed by rarity, its items, its name
+const unitHtml = (h, role) => `<span class="unit"><span class="st">${'★'.repeat(h.star ?? 2)}</span>${tileOf(h.id, '', role)}<span class="its">${(h.items ?? []).map((it) => itemIcon(it)).join('')}</span><span class="n">${esc(hero(h.id).name)}</span></span>`;
 function heroCardHtml(h, role) {
   const tag = role === 'carry' ? '<span class="carry-tag">CARRY</span>' : role === 'key' ? '<span class="key-tag">CLÉ</span>' : '';
-  return `<div class="hcard${role ? ` ${role}` : ''}"><div class="top"><b>${esc(hero(h.id).name)} <span class="st">${'★'.repeat(h.star ?? 2)}</span></b>${tag}</div>
+  return `<div class="hcard${role ? ` ${role}` : ''}"><div class="top"><span class="who">${tileOf(h.id, 'xs')}<b>${esc(hero(h.id).name)} <span class="st">${'★'.repeat(h.star ?? 2)}</span></b></span>${tag}</div>
     ${h.damageShare != null ? `<span class="d">${pct(h.damageShare)} des dégâts</span>` : ''}
-    ${(h.items ?? []).map((it) => `<span class="it">${esc(itemName(it))}</span>`).join('') || '<span class="it muted">sans objet</span>'}</div>`;
+    ${(h.items ?? []).map((it) => `<span class="itrow">${itemIcon(it, 'icon md')}${esc(itemName(it))}</span>`).join('') || '<span class="it muted">sans objet</span>'}</div>`;
 }
 const famChips = (fams) => Object.entries(fams).sort((a, b) => b[1] - a[1]).map(([f, k]) => `<span class="fam ${f}">${esc(FAM.get(f)?.name ?? f)} ${k}</span>`).join('');
 // interest per room won: essence by steps of 5 gold up to 1.x, gold by tiers since 3.0
@@ -266,39 +305,13 @@ const interestRule = () => {
   let prev = 0;
   return 'intérêts en or par salle gagnée : ' + e.interestTiers.map(({ upTo, step }) => { const t = upTo == null || upTo === Infinity ? `1 par tranche de ${step} au-delà de ${prev}` : `1 par tranche de ${step} jusqu’à ${upTo}`; prev = upTo; return t; }).join(', ');
 };
-// ---------- game plan (whole runs on the game's engine) ----------
-const PACK_NAMES = { marche: 'du marché', famille: 'de famille', cible: 'ciblée', rare: 'rare' };
-// average count per run → words
-const times = (x) => (x < 0.15 ? null : x < 0.45 ? 'parfois' : x < 0.8 ? '1 fois sur 2' : `${Math.round(x)}×`);
-function gameplanHtml(c) {
-  const g = c.gameplan;
-  if (!g) return '';
-  const others = Object.entries(g.plans).filter(([k]) => k !== g.plan).sort((a, b) => b[1] - a[1]).map(([k, v]) => `${esc((M.planLabels?.[k] ?? k).split(' :')[0])} ${pct(v)}`).join(', ');
-  const picks = (M.firstPicks ?? []).slice(0, 6).map((x) => esc(hero(x.id).name)).join(', ');
-  const floors = g.floors.map((f, k) => {
-    const packs = Object.entries(f.packs).sort((a, b) => b[1] - a[1]).map(([p, x]) => {
-      const t = times(x);
-      if (!t) return null;
-      const fam = (p === 'cible' || p === 'famille') ? Object.entries(f.traits ?? {}).sort((a, b) => b[1] - a[1])[0]?.[0] : null;
-      return `${t} ${PACK_NAMES[p] ?? p}${fam && p === 'cible' ? ` (${esc(FAM.get(fam)?.name ?? fam)})` : ''}`;
-    }).filter(Boolean);
-    const key = f.targetOwned.filter((h) => h.seated >= 0.25).sort((a, b) => b.seated - a.seated)
-      .map((h) => `<span class="hchip">${hexOf(h.id, true)}${esc(hero(h.id).name)} <span class="muted">${pct(h.seated)} · ${h.star >= 1.8 ? '2★' : h.star >= 1.3 ? '1-2★' : '1★'}</span></span>`).join('');
-    const trans = f.transition.filter((h) => h.share >= 0.1).map((h) => esc(hero(h.id).name));
-    const xp = times(f.xp);
-    const tips = [
-      k === 0 ? `<li><b>Premier héros</b> (invocation offerte) : le plus fort seul à 1★, peu importe la compo : ${picks}.</li>` : '',
-      packs.length ? `<li><b>Invocations</b> : ${packs.join(', ')}.</li>` : '<li><b>Invocations</b> : aucune.</li>',
-      `<li><b>XP</b> : ${xp ? `${xp} (4 XP pour 5 or)` : 'rien'} · <b>or gardé</b> ≈ ${nf.format(f.gold ?? 0)} (soit ${interestOf(f.gold ?? 0).n} ${interestOf(f.gold ?? 0).unit} d’intérêts par salle gagnée)${times(f.items) ? ` · <b>objets du kit</b> à l’étal : ${times(f.items)}` : ''}.</li>`,
-      key ? `<li><b>Héros de la compo déjà assis</b> : ${key}</li>` : '<li><b>Héros de la compo</b> : pas encore, joue les plus forts disponibles.</li>',
-      trans.length ? `<li><b>Héros de transition</b> souvent assis : ${trans.join(', ')}.</li>` : '',
-    ].join('');
-    return `<li><div class="fl-num"><b>Étage ${f.floor}</b><span>survie ${pct(f.survival)}</span><span>niv. ${f.level ?? '–'} · ${f.seats ?? '–'} sièges</span></div><ul class="tips">${tips}</ul></li>`;
-  }).join('');
-  return `<section class="sect"><h4>Comment la jouer, étage par étage</h4>
-    <p style="font-size:14px">Plan conseillé : <b>${esc(M.planLabels?.[g.plan] ?? g.plan)}</b>. Avec ce plan, le bot gagne <b>${pct(g.winRate)}</b> de ${g.runs} runs complètes au ${esc(M.settings.pact)}, jouées sur le moteur du jeu (boutique, invocations, XP, objets).${others ? ` <span class="muted">Autres plans : ${others}.</span>` : ''}</p>
-    <p class="muted" style="font-size:13px;margin-top:4px">Chiffres de fin d’étage, en médiane des runs arrivées jusque-là. Invocations : nombre moyen par run sur l’étage. Héros : part des runs où il est assis, et ses étoiles.</p>
-    <ol class="floors">${floors}</ol></section>`;
+function boardsHtml(c) {
+  const F = M.settings.floors;
+  if (!c.boards?.length) return '<p class="muted">Plateaux pas encore mesurés pour cette version.</p>';
+  return `<div style="display:grid;gap:8px">${c.boards.filter((b) => b.seats >= 2).map((b) => `<div class="brow"><span class="lbl">${b.seats} sièges</span>
+    <span class="us">${b.heroes.map((id) => `<span class="unit">${tileOf(id, 'sm')}<span class="n">${esc(hero(id).name)}</span></span>`).join('')}</span>
+    <span class="res"><b>${b.beats ? `étage ${b.beats}` : '–'}</b><span>${b.beats >= F ? 'bat le boss final' : 'dernier boss battu'}</span></span></div>`).join('')}</div>
+    <p class="muted" style="font-size:13px;margin-top:8px">Pour chaque nombre de sièges, les héros de la compo à poser en premier (meilleur sous-ensemble mesuré sur le banc, avec leurs objets, en milieu de run).${M.firstPicks ? ` Premier héros, avant la compo : le plus fort seul à 1★ (${M.firstPicks.slice(0, 5).map((x) => esc(hero(x.id).name)).join(', ')}).` : ''}</p>`;
 }
 function compRow(c, open) {
   const F = M.settings.floors;
@@ -306,38 +319,44 @@ function compRow(c, open) {
   const carries = c.carry && !c.carry.spread ? c.carry.heroes : [];
   const keys = c.carry?.keyPieces ?? [];
   const H_ = (id) => c.heroes.find((h) => h.id === id) ?? {};
-  const role = (id) => (carries.includes(id) ? 'carry' : keys.includes(id) ? 'key' : null);
+  const role = (id) => (carries.includes(id) ? 'carry' : keys.includes(id) ? 'key' : '');
   const carryShort = !c.carry ? '–' : c.carry.spread ? 'dégâts répartis' : carries.map((id) => esc(hero(id).name)).join(' + ');
   const carryText = !c.carry ? '' : c.carry.spread ? '<b>Carry : dégâts répartis</b> <span class="muted">(aucun héros ne porte la compo seul)</span>'
     : `<b>Carry : ${carries.map((id) => esc(hero(id).name)).join(' + ')}</b> <span class="muted">(${carries.map((id) => pct(H_(id).damageShare ?? 0)).join(' et ')} des dégâts)</span>`;
   const keyText = keys.length ? ` · <b class="key">Pièce${keys.length > 1 ? 's' : ''} clé${keys.length > 1 ? 's' : ''} :</b> ${keys.map((id) => `<b class="key">${esc(hero(id).name)}</b> <span class="muted">(${pct(H_(id).damageShare ?? 0)} des dégâts, −${pct(H_(id).itemLoss ?? 0)} sans ses objets)</span>`).join(', ')}<span class="muted"> : ${keys.length > 1 ? 'leurs objets servent' : 'ses objets servent'} les familles et les autres sièges.</span>` : '';
-  const win = c.gameplan ? pct(c.gameplan.winRate) : '–';
+  const kill = c.fin.kill[F] ?? 0;
   const phase = c.growthDependent ? 'fin de run' : c.cheap ? 'tôt dans la run' : 'dès le milieu de run';
+  const tabs = [['plateaux', 'Plateaux par sièges'], ['objets', 'Héros et objets'], ['runes', 'Runes et bénédictions'], ['chiffres', 'Chiffres et contres']];
   return `<details class="crow"${open ? ' open' : ''}><summary>
     <span class="tbadge ${c.tier}" aria-label="Tier ${c.tier}">${c.tier}</span>
-    <span class="cname"><b>${esc(c.name)}</b><small>Carry : <em>${carryShort}</em> · ${phase}</small><small class="mob">${big(c.fin.median)} par salle · <span class="good">${win} de victoires</span></small></span>
-    <span class="team">${c.heroes.map((h) => avatarHtml(h, role(h.id))).join('')}</span>
+    <span class="cname"><b>${esc(c.name)}</b><small>Carry : <em>${carryShort}</em> · ${phase}</small><small class="mob">${big(c.fin.median)} par salle · <span class="good">boss final ${pct(kill)}</span></small></span>
+    <span class="team">${c.heroes.map((h) => unitHtml(h, role(h.id))).join('')}</span>
     <span class="num">${big(c.fin.median)}</span>
-    <span class="num win">${win}</span>
+    <span class="num win">${pct(kill)}</span>
     <span class="chev" aria-hidden="true"></span>
   </summary>
   <div class="cbody">
-    <div class="hgrid">${c.heroes.map((h) => heroCardHtml(h, role(h.id))).join('')}</div>
-    ${c.carry ? `<p class="carry-line">${carryText}${keyText}</p>` : ''}
-    <div class="stats">
-      <div class="stat"><span class="k">Médiane / salle</span><span class="v">${big(c.fin.median)}</span></div>
-      <div class="stat"><span class="k">P10 – P90</span><span class="v">${big(c.fin.p10)} – ${big(c.fin.p90)}</span></div>
-      <div class="stat"><span class="k">Boss final (étage ${F})</span><span class="v ${c.fin.kill[F] >= 0.9 ? 'good' : c.fin.kill[F] >= 0.6 ? 'warn' : 'bad'}">${pct(c.fin.kill[F] ?? 0)}</span></div>
-      <div class="stat"><span class="k">Étage tenu</span><span class="v">${(c.fin.tenu ?? 0).toLocaleString('fr-FR', { maximumFractionDigits: 1 })}</span></div>
-      <div class="stat"><span class="k">Milieu de run</span><span class="v">${big(c.milieu.median)}</span></div>
-      <div class="stat"><span class="k">Familles</span><span class="v" style="font-family:var(--body);font-size:13px;display:flex;flex-wrap:wrap;gap:4px">${famChips(c.families)}</span></div>
+    <div class="ctabs" role="tablist" aria-label="Détail de la compo">${tabs.map(([k, l], i) => `<button type="button" role="tab" data-ct="${k}" aria-selected="${i === 0}">${l}</button>`).join('')}</div>
+    <div class="cpanel" data-cp="plateaux">${boardsHtml(c)}</div>
+    <div class="cpanel" data-cp="objets" hidden>
+      <div class="hgrid">${c.heroes.map((h) => heroCardHtml(h, role(h.id))).join('')}</div>
+      ${c.carry ? `<p class="carry-line" style="margin-top:12px">${carryText}${keyText}</p>` : ''}
+      ${c.contraband ? `<div class="sect" style="margin-top:14px"><h4>Si le Contrebandier passe</h4><ul class="tips">${c.contraband.slice(0, 3).map((x) => `<li>${itemIcon(x.item, 'icon md')} <b>${esc(itemName(x.item))}</b> sur ${esc(hero(x.hero).name)}${x.replaces ? ` à la place de ${esc(itemName(x.replaces))}` : ''} : ${sgn(x.gain)}</li>`).join('')}</ul></div>` : ''}
     </div>
-    ${gameplanHtml(c)}
-    <div class="cols">
-      <div class="sect"><h4>Runes</h4>${c.runes ? `<ol style="margin:0;padding-left:20px">${c.runes.build.map((r) => `<li>${esc(RU.get(r)?.name ?? r)}</li>`).join('')}</ol><p class="muted" style="font-size:13px">Ordre gauche → droite, sans rune secrète : ×${(1 + c.runes.buildGain).toLocaleString('fr-FR', { maximumFractionDigits: 1 })} sur la médiane.</p>` : '<p class="muted">Voir l’onglet Runes.</p>'}</div>
-      <div class="sect"><h4>Bénédictions</h4>${c.blessings ? `<ul class="tips">${c.blessings.slice(0, 4).map((b) => `<li><b>${esc(BL.get(b.id)?.name ?? b.id)}</b> ${sgn(b.gain)}</li>`).join('')}</ul>` : '<p class="muted">–</p>'}</div>
-      <div class="sect"><h4>Si le Contrebandier passe</h4>${c.contraband ? `<ul class="tips">${c.contraband.slice(0, 3).map((x) => `<li><b>${esc(itemName(x.item))}</b> sur ${esc(hero(x.hero).name)}${x.replaces ? ` à la place de ${esc(itemName(x.replaces))}` : ''} : ${sgn(x.gain)}</li>`).join('')}</ul>` : '<p class="muted">–</p>'}</div>
-      <div class="sect"><h4>Contres</h4><ul class="tips">${counters.map((b) => `<li><b>${esc(BO.get(b.id)?.name)}</b> : ${pct(b.ratio)} des dégâts</li>`).join('')}</ul></div>
+    <div class="cpanel" data-cp="runes" hidden>
+      ${c.runes ? `<div class="rlist">${c.runes.build.map((r, i) => `<span class="rchip"><span class="k">${i + 1}</span>${runeIcon(r)}${esc(RU.get(r)?.name ?? r)}</span>`).join('')}</div><p class="muted" style="font-size:13px;margin-top:8px">Ordre gauche → droite, sans rune secrète : ×${(1 + c.runes.buildGain).toLocaleString('fr-FR', { maximumFractionDigits: 1 })} sur la médiane.</p>` : '<p class="muted">Voir l’onglet Runes.</p>'}
+      ${c.blessings ? `<div class="sect" style="margin-top:14px"><h4>Bénédictions</h4><ul class="tips">${c.blessings.slice(0, 4).map((b) => `<li><b>${esc(BL.get(b.id)?.name ?? b.id)}</b> ${sgn(b.gain)}</li>`).join('')}</ul></div>` : ''}
+    </div>
+    <div class="cpanel" data-cp="chiffres" hidden>
+      <div class="stats">
+        <div class="stat"><span class="k">Médiane / salle</span><span class="v">${big(c.fin.median)}</span></div>
+        <div class="stat"><span class="k">P10 – P90</span><span class="v">${big(c.fin.p10)} – ${big(c.fin.p90)}</span></div>
+        <div class="stat"><span class="k">Boss final (étage ${F})</span><span class="v ${kill >= 0.9 ? 'good' : kill >= 0.6 ? 'warn' : 'bad'}">${pct(kill)}</span></div>
+        <div class="stat"><span class="k">Étage tenu</span><span class="v">${(c.fin.tenu ?? 0).toLocaleString('fr-FR', { maximumFractionDigits: 1 })}</span></div>
+        <div class="stat"><span class="k">Milieu de run</span><span class="v">${big(c.milieu.median)}</span></div>
+        <div class="stat"><span class="k">Familles</span><span class="v" style="font-family:var(--body);font-size:13px;display:flex;flex-wrap:wrap;gap:4px">${famChips(c.families)}</span></div>
+      </div>
+      <div class="sect" style="margin-top:14px"><h4>Contres</h4><ul class="tips">${counters.map((b) => `<li><b>${esc(BO.get(b.id)?.name)}</b> : ${pct(b.ratio)} des dégâts</li>`).join('')}</ul></div>
     </div>
   </div></details>`;
 }
@@ -349,9 +368,9 @@ const VIEWS = {
     const best = M.comps[0];
     return `<div class="bar" style="justify-content:space-between"><h2>Tier list des compos</h2><div class="seg" id="cf">${[['all', 'Toutes'], ['early', 'Tôt'], ['mid', 'Milieu'], ['late', 'Fin'], ['banco', 'Banco']].map(([k, l]) => `<button data-f="${k}" aria-pressed="${compFilter === k}">${l}</button>`).join('')}</div>
       </div>
-      <div style="display:grid;gap:8px;overflow-x:auto"><div class="chead" aria-hidden="true"><span>Tier</span><span>Compo</span><span>Équipe</span><span>Dégâts</span><span>Victoires</span><span></span></div>
+      <div style="display:grid;gap:8px;overflow-x:auto"><div class="chead" aria-hidden="true"><span>Tier</span><span>Compo</span><span>Équipe</span><span>Dégâts</span><span>Boss final</span><span></span></div>
       <div id="clist" class="clist"></div></div>
-      <p class="legend">Anneau doré : carry. Anneau vert-gris : pièce clé. Dégâts : médiane par salle en fin de run. Victoires : runs complètes jouées par le bot. Tier selon l’étage dont le boss tombe avec la médiane des dégâts (S : deux étages au-delà du final et au moins la moitié des dégâts de la meilleure compo). Pastilles : nombre de héros par famille, emblèmes non compris. Carry : le héros qui inflige le plus de dégâts (mesuré siège par siège, Banco partagé selon force et fureur) ; « réparti » quand trois héros ou plus font autant. Pièce clé : peu de dégâts, mais ses objets portent la compo (familles, bonus aux autres sièges).</p>`;
+      <p class="legend">Cadre des portraits : rareté (coût 1 gris, 2 vert, 3 bleu, 4 violet, 5 or). Halo doré : carry. Halo vert-gris : pièce clé. Dégâts : médiane par salle en fin de run. Boss final : part des salles où la compo bat le boss de l’étage ${M.settings.floors}. Tier selon l’étage dont le boss tombe avec la médiane des dégâts (S : deux étages au-delà du final et au moins la moitié des dégâts de la meilleure compo). Pastilles : nombre de héros par famille, emblèmes non compris. Carry : le héros qui inflige le plus de dégâts (mesuré siège par siège, Banco partagé selon force et fureur) ; « réparti » quand trois héros ou plus font autant. Pièce clé : peu de dégâts, mais ses objets portent la compo (familles, bonus aux autres sièges).</p>`;
   },
   strategie: () => strategy(),
   heros: () => `<div class="bar"><input type="search" id="hq" placeholder="Chercher un héros" aria-label="Chercher un héros"><select id="hf" aria-label="Famille"><option value="">Toutes les familles</option>${M.traits.map((t) => `<option value="${t.id}">${esc(t.name)}</option>`).join('')}</select></div><div class="tbl" id="ht"></div>`,
@@ -369,6 +388,12 @@ const AFTER = {
       const list = M.comps.filter((c) => compFilter === 'all' || (compFilter === 'banco' ? c.origin === 'banco' : compFilter === 'early' ? c.cheap : compFilter === 'mid' ? !c.growthDependent : true));
       $('#clist', v).innerHTML = list.map((c, i) => compRow(c, i === 0)).join('') || '<div class="empty">Aucune compo pour ce filtre.</div>';
     };
+    $('#clist', v).addEventListener('click', (e) => {
+      const b = e.target.closest('button[data-ct]'); if (!b) return;
+      const body = b.closest('.cbody');
+      body.querySelectorAll('[data-ct]').forEach((x) => x.setAttribute('aria-selected', String(x === b)));
+      body.querySelectorAll('[data-cp]').forEach((p) => { p.hidden = p.dataset.cp !== b.dataset.ct; });
+    });
     $('#cf', v).addEventListener('click', (e) => { const b = e.target.closest('button'); if (!b) return; compFilter = b.dataset.f; v.querySelectorAll('#cf button').forEach((x) => x.setAttribute('aria-pressed', String(x === b))); draw(); });
     draw();
   },
@@ -394,7 +419,7 @@ const AFTER = {
     const max = Math.max(...rows.map((i) => i.avgGain ?? 0));
     const statTxt = (s) => Object.entries(s).map(([k, x]) => ({ base: `+${x} force`, mult: `+${x} fureur`, maxTotalBonus: `limite +${x}`, bustRatio: `brûlé ${pct(x)}`, goldPerTable: `+${x} or/salle`, discardBonus: `+${x} défausse`, freeDiscards: `${x} défausse gratuite`, interestBonus: `intérêts +${x}` })[k] ?? '').filter(Boolean).join(' · ');
     $('#it', v).innerHTML = `<table><thead><tr><th>Objet</th><th>Prix</th><th>Gain moyen (1er objet)</th><th>Stats</th><th>Effet</th><th>Meilleurs porteurs</th><th>Victoire (réel)</th></tr></thead><tbody>${rows.map((i) => `<tr>
-      <td><b>${esc(i.name)}</b></td><td class="n">${i.price} or</td><td class="n"><div class="who"><div class="track"><div class="minibar" style="width:${(100 * Math.max(0, i.avgGain ?? 0)) / max}%"></div></div>${sgn(i.avgGain ?? 0)}</div></td>
+      <td><span class="who">${itemIcon(i.id, 'icon md')}<b>${esc(i.name)}</b></span></td><td class="n">${i.price} or</td><td class="n"><div class="who"><div class="track"><div class="minibar" style="width:${(100 * Math.max(0, i.avgGain ?? 0)) / max}%"></div></div>${sgn(i.avgGain ?? 0)}</div></td>
       <td>${esc(statTxt(i.stats))}</td><td>${esc(i.desc)}</td><td>${i.bestFor.slice(0, 3).map((x) => `${esc(hero(x.hero).name)} ${sgn(x.gain)}`).join('<br>')}</td><td class="n">${realCell(RI.get(i.id))}</td></tr>`).join('')}</tbody></table>`;
   },
 };
@@ -455,10 +480,10 @@ function runes() {
   if (!withR.length) return '<div class="empty">Pas encore de mesure des runes.</div>';
   return `<div class="grid2">${withR.map((c) => `<div class="card"><h3>${esc(c.name)}</h3>
     <p class="muted">Build de 6 runes sans rune secrète (gauche → droite) : ×${(1 + c.runes.buildGain).toLocaleString('fr-FR', { maximumFractionDigits: 1 })}</p>
-    <ol style="margin:0;padding-left:20px">${c.runes.build.map((r) => `<li><b>${esc(RU.get(r)?.name)}</b> <span class="muted">${esc(RU.get(r)?.desc)}</span></li>`).join('')}</ol>
+    <ol style="margin:0;padding-left:20px">${c.runes.build.map((r) => `<li><span class="who" style="display:inline-flex">${runeIcon(r, 'icon md')}<b>${esc(RU.get(r)?.name)}</b></span> <span class="muted">${esc(RU.get(r)?.desc)}</span></li>`).join('')}</ol>
     <h3 style="font-size:20px">Une rune seule</h3><div class="tbl"><table><tbody>${c.runes.single.slice(0, 10).map((x) => `<tr><td>${esc(RU.get(x.id)?.name)}${RU.get(x.id)?.rarity === 'secrete' ? ' <span class="tag grey">secrète</span>' : ''}</td><td class="n">${sgn(x.gain)}</td></tr>`).join('')}</tbody></table></div>
     <p class="muted">À éviter : ${c.runes.worst.slice(-3).map((x) => `${esc(RU.get(x.id)?.name)} (${sgn(x.gain)})`).join(', ')}</p></div>`).join('')}</div>
-    <div class="card"><h3>Toutes les runes</h3><div class="tbl"><table><thead><tr><th>Rune</th><th>Rareté</th><th>Effet</th></tr></thead><tbody>${M.runes.map((r) => `<tr><td><b>${esc(r.name)}</b></td><td>${esc(r.rarity)}</td><td>${esc(r.desc)}</td></tr>`).join('')}</tbody></table></div></div>`;
+    <div class="card"><h3>Toutes les runes</h3><div class="tbl"><table><thead><tr><th>Rune</th><th>Rareté</th><th>Effet</th></tr></thead><tbody>${M.runes.map((r) => `<tr><td><span class="who">${runeIcon(r.id, 'icon md')}<b>${esc(r.name)}</b></span></td><td>${esc(r.rarity)}</td><td>${esc(r.desc)}</td></tr>`).join('')}</tbody></table></div></div>`;
 }
 function blessings() {
   const cs = M.comps.filter((c) => c.blessings).slice(0, 4);

@@ -50,4 +50,6 @@ jobs:
           git add data/meta.json app/data.json app/img
           git diff --cached --quiet && exit 0
           git commit -m "$msg"
+          # main may have moved during a long analysis: replay this commit on top of it
+          git pull --rebase origin main
           git push
