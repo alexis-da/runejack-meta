@@ -19,7 +19,7 @@ const CURSE = 1;
 
 if (!isMainThread && workerData?.gameplan) {
   const b = makeBanc(loadWorkerSource(workerData.workerPath));
-  const ctx = { Run: b.data.Run, playDeal: b.data.playDeal, heroes: new Map(b.data.heroes.map((h) => [h.id, h])), strength: new Map(workerData.strength), early: new Map(workerData.early) };
+  const ctx = { Run: b.data.Run, playDeal: b.data.playDeal, heroes: new Map(b.data.heroes.map((h) => [h.id, h])), strength: new Map(workerData.strength), early: new Map(workerData.early), itemGain: new Map(workerData.itemGain ?? []) };
   parentPort.on('message', ({ jid, target, plan, seeds }) => {
     try {
       const out = [];
@@ -84,7 +84,7 @@ export async function addGameplans(meta, workerPath, { runs = 300, log = console
   const maxS = Math.max(...meta.heroes.map((h) => h.solo.naked));
   const n = Math.max(1, os.cpus().length);
   const ws = Array.from({ length: n }, () => new Worker(new URL(import.meta.url), {
-    workerData: { gameplan: true, workerPath, strength: meta.heroes.map((h) => [h.id, h.solo.naked / maxS]), early: early.map((x) => [x.id, x.median / maxE]) }, execArgv: [] }));
+    workerData: { gameplan: true, workerPath, strength: meta.heroes.map((h) => [h.id, h.solo.naked / maxS]), early: early.map((x) => [x.id, x.median / maxE]), itemGain: meta.items.map((i) => [i.id, i.avgGain ?? 0]) }, execArgv: [] }));
   const idle = [...ws], q = [], cb = new Map();
   let jid = 0;
   const pump = () => { while (idle.length && q.length) idle.pop().postMessage(q.shift()); };

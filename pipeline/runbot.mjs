@@ -8,17 +8,17 @@
 
 export const PLANS = {
   // keep 30 gold for interest (essence), spend essence on the most useful invocations
-  eco: { reserve: 30, reserveFrom: 0, minValue: 0.03, threeStarMaxCost: 1, reroll: false },
+  eco: { reserve: 30, reserveFrom: 0, minValue: 0.03, threeStarMaxCost: 1, reroll: false, rampFrom: 3, rampLen: 6 },
   // keep 20 gold
-  equilibre: { reserve: 20, reserveFrom: 0, minValue: 0.03, threeStarMaxCost: 1, reroll: false },
+  equilibre: { reserve: 20, reserveFrom: 0, minValue: 0.03, threeStarMaxCost: 1, reroll: false, rampFrom: 3, rampLen: 6 },
   // level as fast as gold allows
-  tempo: { reserve: 0, reserveFrom: 0, minValue: 0.03, threeStarMaxCost: 1, reroll: false },
+  tempo: { reserve: 0, reserveFrom: 0, minValue: 0.03, threeStarMaxCost: 1, reroll: false, rampFrom: 3, rampLen: 6 },
   // floor 1 all-in (XP and invocations), then keep 20 gold
-  depart: { reserve: 20, reserveFrom: 3, minValue: 0.03, threeStarMaxCost: 1, reroll: false },
+  depart: { reserve: 20, reserveFrom: 3, minValue: 0.03, threeStarMaxCost: 1, reroll: false, rampFrom: 3, rampLen: 6 },
   // gold economy (3.0+): level up to 6 before invocations, keep 10 gold
-  niveau: { reserve: 10, reserveFrom: 3, minValue: 0.03, threeStarMaxCost: 1, reroll: false, xpFirst: 6 },
+  niveau: { reserve: 10, reserveFrom: 3, minValue: 0.03, threeStarMaxCost: 1, reroll: false, rampFrom: 3, rampLen: 6, xpFirst: 6 },
   // keep 20 gold, reroll the shop for better invocations
-  relance: { reserve: 20, reserveFrom: 0, minValue: 0.03, threeStarMaxCost: 1, reroll: true },
+  relance: { reserve: 20, reserveFrom: 0, minValue: 0.03, threeStarMaxCost: 1, reroll: true, rampFrom: 3, rampLen: 6 },
 };
 
 const fams = (def) => [def.trait, ...(def.extraTraits ?? [])];
@@ -26,6 +26,7 @@ const fams = (def) => [def.trait, ...(def.extraTraits ?? [])];
 export function makeRunBot(ctx, target, params = PLANS.equilibre) {
   const { heroes: HERO, strength } = ctx;
   const T = target.heroes.map((h) => h.id);
+  const weight = Object.fromEntries(target.heroes.map((h) => [h.id, h.damageShare == null ? 0.4 : Math.max(h.damageShare, 0.5 * (h.itemLoss ?? 0))]));
   const kitOf = Object.fromEntries(target.heroes.map((h) => [h.id, h.items ?? []]));
   const famWeight = {};
   for (const id of T) for (const f of fams(HERO.get(id))) famWeight[f] = (famWeight[f] ?? 0) + 1;
@@ -38,7 +39,8 @@ export function makeRunBot(ctx, target, params = PLANS.equilibre) {
   const heroValue = (defId, star) => {
     const def = HERO.get(defId);
     const syn = fams(def).reduce((s, f) => s + (famWeight[f] ?? 0), 0);
-    const tgt = T.includes(defId) ? 60 + 10 * (5 - T.indexOf(defId)) : 0;
+    // a target hero counts by its real weight in the comp: its damage share, or what its items bring
+    const tgt = T.includes(defId) ? 20 + 100 * (weight[defId] ?? 0.4) : 0;
     const late = (strength.get(defId) ?? 0) * 3 ** (star - 1) * 20;
     const early = (ctx.early?.get(defId) ?? 0) * 3 ** (star - 1) * 60;
     return phase * (tgt + syn * 4 + late) + (1 - phase) * (early + tgt * 0.25 + syn);
@@ -134,11 +136,39 @@ export function makeRunBot(ctx, target, params = PLANS.equilibre) {
       if (slot && run.canEquip(k, slot)) run.equip(k, slot);
     }
     for (const [k, o] of run.itemShop.entries()) {
-      if (o.sold || run.gold - 8 < params.reserve / 2) continue; // stall items: half the reserve
+      if (o.sold || o.rune || run.gold - 8 < params.reserve / 2) continue; // stall items: half the reserve
       const slot = holderFor(o.id);
       if (slot && run.canBuyItemOn(k, slot)) { run.buyItemOn(k, slot); fl.items++; }
     }
+    // every other item works for the seated heroes now (room loot, spare stall items): a seat's free
+    // slots beyond what its own kit still needs go to the best seated heroes first
+    const spare = (c) => 3 - (c.items ?? []).length - missingKit(c).filter((it) => !(c.items ?? []).includes(it)).length * (T.includes(c.defId) ? 1 : 0);
+    // spread: one item each before a second one (an item is worth most on a bare hero)
+    const seats = () => run.board.map((c, i) => ({ c, i })).filter(({ c }) => c && spare(c) > 0)
+      .sort((a, b) => (a.c.items ?? []).length - (b.c.items ?? []).length || heroValue(b.c.defId, b.c.star) - heroValue(a.c.defId, a.c.star));
+    // emblems and royal seals only add a family: never bought or given outside a kit
+    const familyOnly = (id) => /^embleme-|^sceau-royal$/.test(id) || (ctx.itemGain && (ctx.itemGain.get(id) ?? 0) < 0.15);
+    const reserved = new Set(phase > 0.5 ? T.filter((id) => !run.board.some((c) => c?.defId === id)).flatMap((id) => kitOf[id]) : []);
+    for (let k = run.items.length - 1; k >= 0; k--) {
+      if (reserved.has(run.items[k]) || familyOnly(run.items[k])) continue;
+      const to = seats()[0];
+      if (to && run.canEquip(k, { area: 'board', index: to.i })) run.equip(k, { area: 'board', index: to.i });
+    }
+    const byGain = [...run.itemShop.entries()].sort((a, b) => (ctx.itemGain?.get(b[1].id) ?? 0) - (ctx.itemGain?.get(a[1].id) ?? 0));
+    for (const [k, o] of byGain) {
+      const to = seats()[0];
+      if (o.sold || o.rune || familyOnly(o.id) || !to || run.itemBlocker(k) || run.gold - run.stallCost(k) < (run.tableIndex < params.reserveFrom ? 0 : params.reserve)) continue;
+      if (run.canBuyItemOn(k, { area: 'board', index: to.i })) { run.buyItemOn(k, { area: 'board', index: to.i }); fl.items++; }
+    }
   }
+  // runes at the stall (3.x): take a free slot with a rune of the build
+  function stallRunes(run) {
+    for (const [k, o] of run.itemShop.entries()) {
+      if (!o.rune || o.sold || run.itemBlocker(k) || runeRank(o.id) >= 100) continue;
+      if (run.gold - run.stallCost(k) >= (run.tableIndex < params.reserveFrom ? 0 : params.reserve)) run.buyItem(k);
+    }
+  }
+  const missingKit = (c) => { const kit = [...(kitOf[c.defId] ?? [])]; for (const it of c.items ?? []) { const j = kit.indexOf(it); if (j >= 0) kit.splice(j, 1); } return kit; };
 
   // copies still wanted per target hero: 2★ needs 3 copies, 3★ needs 9
   const needs = (run) => {
@@ -168,13 +198,14 @@ export function makeRunBot(ctx, target, params = PLANS.equilibre) {
   // invocations cost essence up to 1.x, gold since 3.0
   const priceOf = (run, o, trait) => { const p = run.offerPrice(o, trait); return typeof p === 'number' ? p : p.essence ?? p.gold ?? 0; };
   const paidInGold = (run, o) => typeof run.offerPrice(o) === 'number';
+  const goldEconomy = (run) => run.shop.length > 0 && paidInGold(run, run.shop[0]);
   const bestTrait = (run) => {
     const traits = Object.keys(famWeight);
     return traits.map((t) => ({ t, v: offerValue(run, { pack: 'cible' }, t) })).sort((a, b) => b.v - a.v)[0]?.t;
   };
 
   function shop(run) {
-    phase = Math.max(0, Math.min(1, (run.tableIndex - 3) / 6));
+    phase = Math.max(0, Math.min(1, (run.tableIndex - params.rampFrom) / params.rampLen));
     const fl = floorLog(run);
     takePack(run);
     runesAndBlessings(run);
@@ -185,6 +216,18 @@ export function makeRunBot(ctx, target, params = PLANS.equilibre) {
       takePack(run);
       const empty = run.board.includes(null) && run.bench.every((c) => c === null);
       const fam = bestTrait(run);
+      // gold economy (3.x): an empty seat first, then items for the seated heroes (the best value per
+      // gold early on), then invocations, then XP
+      if (goldEconomy(run)) {
+        if (empty) {
+          const fill = run.shop.map((o, i) => ({ o, i })).filter(({ o, i }) => !o.sold && !run.buyBlocker(i, o.pack === 'cible' ? fam : undefined)).sort((a, b) => priceOf(run, a.o, fam) - priceOf(run, b.o, fam))[0];
+          if (fill) { run.buy(fill.i, fill.o.pack === 'cible' ? fam : undefined); fl.packs[fill.o.pack] = (fl.packs[fill.o.pack] ?? 0) + 1; takePack(run); continue; }
+        }
+        arrange(run);
+        const before = run.gold;
+        gear(run, fl);
+        if (run.gold !== before) continue;
+      }
       // 0. levels first when the plan says so (gold economy: XP and invocations share the same gold)
       if (params.xpFirst && !empty && run.canBuyXp() && run.gold - 5 >= reserve && run.level < params.xpFirst) { run.buyXp(); fl.xp++; continue; }
       // 1. invocations: the most useful cards per coin, or anything to fill an empty seat; when paid in
@@ -218,12 +261,13 @@ export function makeRunBot(ctx, target, params = PLANS.equilibre) {
     }
     arrange(run);
     gear(run, fl);
+    if (run.itemShop.some((o) => o.rune)) stallRunes(run);
     fl.level = run.level; fl.gold = run.gold; fl.essence = run.essence ?? null;
     fl.board = run.board.map((c) => (c ? { id: c.defId, star: c.star, items: [...(c.items ?? [])] } : null));
   }
 
   function table(run) {
-    phase = Math.max(0, Math.min(1, (run.tableIndex - 3) / 6));
+    phase = Math.max(0, Math.min(1, (run.tableIndex - params.rampFrom) / params.rampLen));
     if (run.betOffer) run.declineBet?.();
     takePack(run);
     if (run.phase === 'table' && run.board.some(Boolean)) arrange0(run);
@@ -241,8 +285,16 @@ export function makeRunBot(ctx, target, params = PLANS.equilibre) {
   function loot(run) {
     runesAndBlessings(run);
     const kits = new Set(T.flatMap((id) => kitOf[id]));
-    const offers = run.lootOffers.map((o, i) => ({ i, s: o.kind === 'gold' ? 3 : kits.has(o.id) ? 10 : 2 })).sort((a, b) => b.s - a.s);
+    // since 3.x the loot offers a hero, a rune, an item or gold
+    const score = (o) => {
+      if (o.kind === 'gold') return 3;
+      if (o.kind === 'hero') { const v = cardValue(run, { defId: o.defId }); return v > 60 ? 12 : 4 + v / 10; }
+      if (o.kind === 'rune') return run.runes.length < run.runeSlots() ? (runeRank(o.id) < 100 ? 11 : 8) : 1;
+      return kits.has(o.id) ? 10 : 2 + 12 * (ctx.itemGain?.get(o.id) ?? 0.3); // an item goes on a seated hero
+    };
+    const offers = run.lootOffers.map((o, i) => ({ i, s: score(o) })).sort((a, b) => b.s - a.s);
     run.pickLoot(offers[0]?.i ?? 0);
+    takePack(run);
   }
 
   /** Plays one run until victory or loss. Returns { won, floor, tables, log } */
