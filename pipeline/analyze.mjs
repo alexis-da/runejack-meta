@@ -6,6 +6,7 @@ import { makeBanc, loadWorkerSource } from './banc.mjs';
 import { carryOf, damageShares } from './carry.mjs';
 import { addGameplans } from './gameplan.mjs';
 import { boardsOf, boardsContext } from './boards.mjs';
+import { runesOf, blessingsOf } from './runes.mjs';
 import { MOMENTS, heroCounter, makeSetup } from './setup.mjs';
 
 const SCALE = +(process.env.SCALE ?? 0.5);
@@ -231,27 +232,12 @@ export async function analyze({ version, workerPath, previous = null, out = 'dat
   }
   log('D. contrebande', `${((Date.now() - t0) / 60000).toFixed(1)} min`);
 
-  // ---------- E. runes and blessings ----------
+  // ---------- E. runes and blessings (every comp) ----------
   const NR = n(400);
-  for (const c of comps.slice(0, 3)) {
-    const base = await med({ heroes: c.heroes }, NR);
-    const single = await Promise.all(D.runes.map(async (r) => ({ id: r.id, gain: base > 0 ? (await med({ heroes: c.heroes, runes: [r.id] }, NR)) / base - 1 : 0 })));
-    single.sort((a, b) => b.gain - a.gain);
-    const chosen = [];
-    let cur = base;
-    for (let s = 0; s < 6; s++) {
-      const cand = D.runes.filter((r) => r.rarity !== 'secrete' && !chosen.includes(r.id));
-      const ms = await Promise.all(cand.map((r) => med({ heroes: c.heroes, runes: [...chosen, r.id] }, NR)));
-      const bi = ms.indexOf(Math.max(...ms));
-      chosen.push(cand[bi].id); cur = ms[bi];
-    }
-    c.runes = { single: single.slice(0, 15), worst: single.slice(-5), build: chosen, buildGain: base > 0 ? cur / base - 1 : 0 };
-  }
-  for (const c of comps.slice(0, 6)) {
-    const base = await med({ heroes: c.heroes }, NR);
-    const b = await Promise.all(D.blessings.map(async (x) => ({ id: x.id, gain: base > 0 ? (await med({ heroes: c.heroes, blessings: [x.id] }, NR)) / base - 1 : 0 })));
-    c.blessings = b.sort((a, b2) => b2.gain - a.gain);
-  }
+  await Promise.all(comps.map(async (c) => {
+    c.runes = await runesOf(c, (x) => med(x, NR), D);
+    c.blessings = await blessingsOf(c, (x) => med(x, NR), D);
+  }));
   log('E. runes et bénédictions', `${((Date.now() - t0) / 60000).toFixed(1)} min`);
 
   // ---------- F. openers (early game: cheap heroes, no items, milieu) ----------
