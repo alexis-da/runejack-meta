@@ -7,6 +7,7 @@ import { carryOf, damageShares } from './carry.mjs';
 import { addGameplans } from './gameplan.mjs';
 import { boardsOf, boardsContext } from './boards.mjs';
 import { runesOf, blessingsOf } from './runes.mjs';
+import { contrabandOf } from './contraband.mjs';
 import { MOMENTS, heroCounter, makeSetup } from './setup.mjs';
 
 const SCALE = +(process.env.SCALE ?? 0.5);
@@ -213,23 +214,9 @@ export async function analyze({ version, workerPath, previous = null, out = 'dat
   await Promise.all(comps.map(async (c) => { c.boards = await boardsOf(c, (x, opts) => full(x, n(1200), opts), FLOORS, bctx); }));
   log('C. évaluation', `${((Date.now() - t0) / 60000).toFixed(1)} min`);
 
-  // ---------- D. contraband upgrades per comp ----------
+  // ---------- D. contraband upgrades per comp (each smuggler item once, on its best hero) ----------
   const NC = n(300);
-  for (const c of comps.slice(0, 6)) {
-    const base = await med(c, NC);
-    const opts = [];
-    await Promise.all(c.heroes.map((h, i) => Promise.all(CONTRA.map(async (it) => {
-      let best2 = 0, slot = -1;
-      for (let s = 0; s < 3; s++) {
-        const c2 = { heroes: c.heroes.map((x, j) => (j === i ? { ...x, items: Object.assign([...x.items, '', '', ''].slice(0, 3), { [s]: it }) } : x)) };
-        const m = await med(c2, NC);
-        if (m > best2) { best2 = m; slot = s; }
-      }
-      opts.push({ seat: i, hero: h.id, item: it, replaces: c.heroes[i].items[slot] ?? null, gain: base > 0 ? best2 / base - 1 : 0 });
-    }))));
-    opts.sort((a, b) => b.gain - a.gain);
-    c.contraband = opts.slice(0, 4);
-  }
+  await Promise.all(comps.map(async (c) => { c.contraband = await contrabandOf(c, (x) => med(x, NC), CONTRA); }));
   log('D. contrebande', `${((Date.now() - t0) / 60000).toFixed(1)} min`);
 
   // ---------- E. runes and blessings (every comp) ----------
