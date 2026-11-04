@@ -1,5 +1,5 @@
 # Every 6 hours: checks the game version, runs the full analysis when it changed, refreshes the real-game
-# stats, then commits data/meta.json and app/data.json. Vercel redeploys the site on each push.
+# stats and the pictures, then commits data/meta.json, app/data.json and app/img. Vercel redeploys the site on each push.
 # Exit codes of pipeline/update.mjs: 0 = new version analysed, 11 = stats refreshed, 10 = nothing new.
 name: Mise à jour de la méta
 
@@ -47,7 +47,7 @@ jobs:
           if [ "${{ steps.update.outputs.code }}" = 0 ]; then msg="Méta $version"; else msg="Stats des vraies parties $(date -u +%F\ %H:%M)"; fi
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add data/meta.json app/data.json
+          git add data/meta.json app/data.json app/img
           git diff --cached --quiet && exit 0
           git commit -m "$msg"
           git push

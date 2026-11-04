@@ -20,4 +20,5 @@ fs.mkdirSync('public', { recursive: true });
 fs.writeFileSync('public/index.html', html);
 if (!fs.existsSync('app/data.json')) throw new Error('app/data.json manquant : lancer `npm run update` d’abord');
 fs.copyFileSync('app/data.json', 'public/data.json');
+if (fs.existsSync('app/img')) fs.cpSync('app/img', 'public/img', { recursive: true });
 console.log(`public/ prêt (${(fs.statSync('public/data.json').size / 1024).toFixed(0)} Ko de données)`);

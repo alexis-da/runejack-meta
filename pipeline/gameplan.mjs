@@ -68,6 +68,8 @@ function summarise(results, target, floors) {
       xp: mean(logs.map((l) => l.xp)), items: mean(logs.map((l) => l.items)), rerolls: mean(logs.map((l) => l.rerolls)), packs, traits,
       targetOwned,
       // heroes seated that are not in the target: the transition heroes of this floor
+      // the typical board at the end of the floor: the most often seated heroes, as many as the seats
+      board: Object.entries(seated).sort((a, b) => b[1] - a[1]).slice(0, med(logs.map((l) => l.board.length)) ?? 0).map(([id, share]) => ({ id, share })),
       transition: Object.entries(seated).filter(([id]) => !T.includes(id)).sort((a, b) => b[1] - a[1]).slice(0, 4).map(([id, share]) => ({ id, share })),
     });
   }

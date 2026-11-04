@@ -5,6 +5,7 @@ import fs from 'node:fs';
 import { fetchGame } from './fetch.mjs';
 import { analyze } from './analyze.mjs';
 import { fetchStats } from './api.mjs';
+import { fetchImages } from './images.mjs';
 
 const force = process.argv.includes('--force');
 const statsOnly = process.argv.includes('--stats');
@@ -29,6 +30,9 @@ if (!statsOnly && (force || !prev || prev.version !== game.version)) {
 } else if (!statsOnly) {
   console.log('déjà à jour');
 }
+// pictures of heroes, items and runes (only the changed ones are downloaded)
+const imgs = await fetchImages(meta, game.main).catch((e) => ({ error: e.message }));
+console.log(imgs.error ? `images : échec (${imgs.error})` : `images : ${imgs.got} téléchargées, ${imgs.kept} inchangées${imgs.missing.length ? `, introuvables : ${imgs.missing.join(', ')}` : ''}`);
 let stats = await fetchStats();
 const fresh = stats.ok;
 console.log(stats.ok ? 'statistiques des vraies parties : ok' : 'statistiques des vraies parties : indisponibles (clé API absente ou refusée)');
@@ -37,4 +41,4 @@ if (!stats.ok && fs.existsSync('app/data.json')) stats = JSON.parse(fs.readFileS
 fs.mkdirSync('app', { recursive: true });
 fs.writeFileSync('app/data.json', JSON.stringify({ meta, stats }));
 const analysed = meta !== prev || force;
-process.exit(analysed && !statsOnly ? 0 : fresh ? 11 : 10);
+process.exit(analysed && !statsOnly ? 0 : fresh || imgs.got > 0 ? 11 : 10);

@@ -18,7 +18,7 @@ async function get(url) {
   }
 }
 
-/** Returns { version, versionDate, mainFile, workerFile, workerPath, patchNotes } */
+/** Returns { version, versionDate, mainFile, main, workerFile, workerPath, patchNotes } */
 export async function fetchGame(cacheDir = 'cache') {
   const home = await get(`${ORIGIN}/`);
   const mainFile = home.match(/assets\/(main-[\w-]+\.js)/)?.[1];
@@ -41,10 +41,10 @@ export async function fetchGame(cacheDir = 'cache') {
   const workerPath = path.join(dir, workerFile);
   if (!fs.existsSync(workerPath)) fs.writeFileSync(workerPath, await get(`${ORIGIN}/assets/${workerFile}`));
   fs.writeFileSync(path.join(dir, 'patchnotes.md'), patchNotes);
-  return { version, versionDate: versionDate.trim(), versionTitle: versionTitle.trim(), mainFile, workerFile, workerPath, patchNotes };
+  return { version, versionDate: versionDate.trim(), versionTitle: versionTitle.trim(), mainFile, main, workerFile, workerPath, patchNotes };
 }
 
 if (import.meta.url === `file://${process.argv[1]}`) {
   const g = await fetchGame();
-  console.log(JSON.stringify({ ...g, patchNotes: g.patchNotes.slice(0, 200) + '…' }, null, 2));
+  console.log(JSON.stringify({ ...g, main: undefined, patchNotes: g.patchNotes.slice(0, 200) + '…' }, null, 2));
 }
