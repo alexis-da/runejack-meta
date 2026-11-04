@@ -5,7 +5,7 @@ import { BancPool } from './pool.mjs';
 import { makeBanc, loadWorkerSource } from './banc.mjs';
 import { carryOf, damageShares } from './carry.mjs';
 import { addGameplans } from './gameplan.mjs';
-import { boardsOf } from './boards.mjs';
+import { boardsOf, boardsContext } from './boards.mjs';
 import { MOMENTS, heroCounter, makeSetup } from './setup.mjs';
 
 const SCALE = +(process.env.SCALE ?? 0.5);
@@ -208,7 +208,8 @@ export async function analyze({ version, workerPath, previous = null, out = 'dat
   // carry: the hero who deals the damage (and the key piece whose items matter most)
   await Promise.all(comps.map(async (c) => Object.assign(c, await carryOf(c, (heroes) => med({ heroes }, n(3000)), damageShares(banc0, setup(lean(c)), n(3000))))));
   // boards along the run: best subset of the comp for each number of seats
-  await Promise.all(comps.map(async (c) => { c.boards = await boardsOf(c, (x, opts) => full(x, n(1200), opts), FLOORS); }));
+  const bctx = boardsContext(D, heroes);
+  await Promise.all(comps.map(async (c) => { c.boards = await boardsOf(c, (x, opts) => full(x, n(1200), opts), FLOORS, bctx); }));
   log('C. évaluation', `${((Date.now() - t0) / 60000).toFixed(1)} min`);
 
   // ---------- D. contraband upgrades per comp ----------

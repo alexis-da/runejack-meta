@@ -109,7 +109,9 @@ export async function addGameplans(meta, workerPath, { runs = 300, log = console
     log(`  ${c.name} : ${best[0]} ${(100 * best[1].win).toFixed(0)} % de victoires`);
   }));
   for (const w of ws) w.terminate();
-  meta.firstPicks = early.slice(0, 12);
+  // the free invocation at level 1 only offers what the shop odds of level 1 allow (cost 1 in 3.x)
+  const odds1 = banc.data.shopOdds?.[banc.data.progressionCursed?.odds?.[0] ?? 1] ?? [100];
+  meta.firstPicks = early.filter((x) => (odds1[x.cost - 1] ?? 0) >= 10).slice(0, 12);
   meta.planLabels = PLAN_LABELS;
   return meta;
 }

@@ -12,10 +12,12 @@ const GETTERS = {
 const CONSTANTS = {
   economy: /([A-Za-z_$][\w$]*)=\{startGold:\d/,
   hp: /([A-Za-z_$][\w$]*)=\{tableHp:\[/,
-  progressionGuest: /([A-Za-z_$][\w$]*)=\{seats:\[3,/,
-  progressionCursed: /([A-Za-z_$][\w$]*)=\{seats:\[1,/,
+  // guest: 3 seats at once (1 since 3.8, then 3 at level 2); cursed pacts: one seat more every other level
+  progressionGuest: /([A-Za-z_$][\w$]*)=\{seats:\[(?:3|1,3),/,
+  progressionCursed: /([A-Za-z_$][\w$]*)=\{seats:\[1,2,/,
   traits: /([A-Za-z_$][\w$]*)=\{noblesse:\{id:`noblesse`/,
   pacts: /([A-Za-z_$][\w$]*)=\[\{level:0,name:`/,
+  shopOdds: /([A-Za-z_$][\w$]*)=\{1:\[100,0,0,0,0\],2:\[/,
   // full-run engine: the run class the banc instantiates, and its bot that plays one deal
   Run: /new ([A-Za-z_$][\w$]*)\([\w$]+\.seed\?\?\d+,0,[\w$]+\.curse\?\?1/,
   playDeal: /=([A-Za-z_$][\w$]*)\([\w$]+,[\w$]+\);[\w$]+\.onDeal\?\./,

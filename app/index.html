@@ -140,7 +140,9 @@ ul.tips img.px, .who img.px { display: inline-block; vertical-align: middle; }
 .ctabs button[aria-selected="true"] { color: var(--text); font-weight: 600; border-bottom-color: var(--gold); }
 .cpanel[hidden] { display: none; }
 .brow { display: flex; align-items: center; gap: 16px; padding: 8px 12px; border-radius: 10px; background: var(--felt); }
-.brow .lbl { width: 92px; flex: none; font-size: 13px; font-weight: 600; padding: 6px 10px; border-radius: 8px; background: var(--felt-2); text-align: center; }
+.brow .lbl { width: 92px; flex: none; font-size: 13px; font-weight: 600; padding: 6px 10px; border-radius: 8px; background: var(--felt-2); text-align: center; display: grid; gap: 1px; }
+.brow .lbl small { font-size: 11px; font-weight: 400; color: var(--muted); }
+.tile.trans { border-style: dashed; opacity: .9; }
 .brow .us { display: flex; gap: 8px; flex: 1; flex-wrap: wrap; }
 .brow .res { display: flex; flex-direction: column; align-items: flex-end; text-align: right; }
 .brow .res b { font-family: var(--mono); font-size: 16px; }
@@ -308,10 +310,13 @@ const interestRule = () => {
 function boardsHtml(c) {
   const F = M.settings.floors;
   if (!c.boards?.length) return '<p class="muted">Plateaux pas encore mesurés pour cette version.</p>';
-  return `<div style="display:grid;gap:8px">${c.boards.filter((b) => b.seats >= 2).map((b) => `<div class="brow"><span class="lbl">${b.seats} sièges</span>
-    <span class="us">${b.heroes.map((id) => `<span class="unit">${tileOf(id, 'sm')}<span class="n">${esc(hero(id).name)}</span></span>`).join('')}</span>
+  const inComp = new Set(c.heroes.map((h) => h.id));
+  const unit = (h) => { const x = typeof h === 'string' ? { id: h, star: 1, items: [] } : h;
+    return `<span class="unit"><span class="st">${'★'.repeat(x.star ?? 1)}</span>${tileOf(x.id, 'sm', inComp.has(x.id) ? '' : 'trans')}<span class="its">${(x.items ?? []).map((it) => itemIcon(it)).join('')}</span><span class="n">${esc(hero(x.id).name)}</span></span>`; };
+  return `<div style="display:grid;gap:8px">${c.boards.filter((b) => b.seats >= 2).map((b) => `<div class="brow"><span class="lbl">${b.seats} sièges${b.level ? `<small>niveau ${b.level}</small>` : ''}</span>
+    <span class="us">${b.heroes.map(unit).join('')}</span>
     <span class="res"><b>${b.beats ? `étage ${b.beats}` : '–'}</b><span>${b.beats >= F ? 'bat le boss final' : 'dernier boss battu'}</span></span></div>`).join('')}</div>
-    <p class="muted" style="font-size:13px;margin-top:8px">Pour chaque nombre de sièges, les héros de la compo à poser en premier (meilleur sous-ensemble mesuré sur le banc, avec leurs objets, en milieu de run).${M.firstPicks ? ` Premier héros, avant la compo : le plus fort seul à 1★ (${M.firstPicks.slice(0, 5).map((x) => esc(hero(x.id).name)).join(', ')}).` : ''}</p>`;
+    <p class="muted" style="font-size:13px;margin-top:8px">Le plateau à viser pour chaque nombre de sièges, au niveau qui l’ouvre (Pacte du Joueur) : seulement les raretés que la boutique propose vraiment à ce niveau, 1★ et un objet au début, puis la compo complète. Cadre en pointillés : héros de transition, à remplacer ensuite. Mesuré sur le banc.${M.firstPicks ? ` Premier héros : le plus fort seul à 1★ (${M.firstPicks.slice(0, 5).map((x) => esc(hero(x.id).name)).join(', ')}).` : ''}</p>`;
 }
 function compRow(c, open) {
   const F = M.settings.floors;
