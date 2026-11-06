@@ -24,7 +24,7 @@ export async function fetchGame(cacheDir = 'cache') {
   const mainFile = home.match(/assets\/(main-[\w-]+\.js)/)?.[1];
   if (!mainFile) throw new Error('bundle principal introuvable sur la page d’accueil');
   const main = await get(`${ORIGIN}/assets/${mainFile}`);
-  const head = main.match(/## (\d+\.\d+\.\d+) · ([^·\n]+) · ([^\n`]+)/);
+  const head = main.match(/## (\d+\.\d+\.\d+) · ([^·\r\n]+) · ([^\r\n`]+)/);
   if (!head) throw new Error('version introuvable dans les notes de patch');
   const [, version, versionDate, versionTitle] = head;
   const notesStart = main.indexOf(`## ${version} ·`);
