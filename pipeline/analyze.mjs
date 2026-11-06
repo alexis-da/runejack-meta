@@ -79,6 +79,9 @@ export async function analyze({ version, workerPath, previous = null, out = 'dat
 
   // ---------- B. comp search (GA + local search) ----------
   const kitOf = Object.fromEntries(heroes.map((h) => [h.id, h.solo.kit]));
+  // secret heroes are easy to find from level 9 on; every pair of them is tried together
+  const SECRETS = D.heroes.filter((h) => h.cost === 5).map((h) => h.id);
+  const SECRET_PAIRS = SECRETS.flatMap((a, i) => SECRETS.slice(i + 1).map((b) => [a, b]));
   const templates = [];
   for (const f of FAMILIES) {
     const fam = heroes.filter((h) => h.families.includes(f));
@@ -125,6 +128,11 @@ export async function analyze({ version, workerPath, previous = null, out = 'dat
       return c;
     };
     let P = [...prevComps, ...templates].filter((c) => !c.heroes.some((h) => exclude.includes(h.id))).map(toG);
+    // seeds: the best previous comps with each pair of secrets in place of their two weakest seats (last seats)
+    for (const c of prevComps.slice(0, 3)) for (const [a, b] of SECRET_PAIRS) {
+      if ([a, b].some((x) => exclude.includes(x) || c.heroes.some((h) => h.id === x))) continue;
+      const g = toG(c); g.heroes[3] = a; g.items[3] = [...kitOf[a]]; g.heroes[4] = b; g.items[4] = [...kitOf[b]]; P.push(g);
+    }
     while (P.length < pop) P.push(randomG());
     for (let g = 0; g < gens; g++) {
       const f = await Promise.all(P.map((x) => fit(x)));
@@ -145,6 +153,9 @@ export async function analyze({ version, workerPath, previous = null, out = 'dat
         for (let i = 0; i < 5; i++) for (let s = 0; s < 3; s++) for (const it of REG) if (it !== g.items[i][s]) { const c = clone(g); c.items[i][s] = it; cands.push(c); }
         for (let i = 0; i < 5; i++) for (const h of H) if (!g.heroes.includes(h)) { const c = clone(g); c.heroes[i] = h; c.items[i] = [...kitOf[h]]; cands.push(c); }
         for (let i = 0; i < 5; i++) for (let j = i + 1; j < 5; j++) { const c = clone(g); [c.heroes[i], c.heroes[j]] = [c.heroes[j], c.heroes[i]]; [c.items[i], c.items[j]] = [c.items[j], c.items[i]]; cands.push(c); }
+        // secret heroes work in pairs (Croupier déchu ×2 with the Patron): one swap at a time never finds them
+        for (const [a, b] of SECRET_PAIRS) if (!g.heroes.includes(a) && !g.heroes.includes(b) && H.includes(a) && H.includes(b))
+          for (let i = 0; i < 5; i++) for (let j = 0; j < 5; j++) if (i !== j) { const c = clone(g); c.heroes[i] = a; c.items[i] = [...kitOf[a]]; c.heroes[j] = b; c.items[j] = [...kitOf[b]]; cands.push(c); }
         const fs2 = await Promise.all(cands.map(fit));
         let bi = -1; fs2.forEach((x, i) => { if (x > f * 1.01) { f = x; bi = i; } });
         if (bi < 0) break;
